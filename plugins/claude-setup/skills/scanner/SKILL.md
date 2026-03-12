@@ -1,6 +1,6 @@
 ---
 name: scanner
-description: Deep codebase scanning for anomalies, domain rules, traps, and patterns. Used by /setup:init and /setup:sync agents.
+description: Deep codebase scanning for anomalies, domain rules, traps, and patterns. Used by /cs:init and /cs:sync agents.
 user-invocable: false
 ---
 

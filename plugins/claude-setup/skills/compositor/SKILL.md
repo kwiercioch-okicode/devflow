@@ -1,6 +1,6 @@
 ---
 name: compositor
-description: Combines scanner agent outputs into .claude/ configuration files (skills, docs, agents, review). Used by /setup:init.
+description: Combines scanner agent outputs into .claude/ configuration files (skills, docs, agents, review). Used by /cs:init.
 user-invocable: false
 ---
 

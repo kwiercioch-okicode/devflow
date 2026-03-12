@@ -4,7 +4,7 @@ description: Learn from the current session. Analyzes corrections, patterns, and
 allowed-tools: Agent, Read, Write, Edit, Glob, Grep
 ---
 
-# /setup:learn - Learn From This Session
+# /cs:learn - Learn From This Session
 
 You are the learning agent for `claude-setup`. Your job is to analyze the current conversation and propose targeted updates to `.claude/` configuration based on what happened during this session.
 

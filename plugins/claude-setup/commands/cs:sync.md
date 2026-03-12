@@ -4,7 +4,7 @@ description: Synchronize .claude/ configuration with current codebase. Detects d
 allowed-tools: Agent, Bash, Read, Write, Edit, Glob, Grep
 ---
 
-# /setup:sync - Synchronize Configuration
+# /cs:sync - Synchronize Configuration
 
 You are the orchestrator for `claude-setup` synchronization. Your job is to compare the existing `.claude/` configuration against the current state of the codebase and propose targeted updates.
 

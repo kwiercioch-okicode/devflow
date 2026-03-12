@@ -24,13 +24,13 @@ Based on [ETH Zurich research](https://www.infoq.com/news/2026/03/agents-context
 
 ## Commands
 
-### `/setup:init`
+### `/cs:init`
 
 Generate complete `.claude/` configuration from codebase analysis.
 
 ```bash
-/setup:init              # current directory
-/setup:init ./my-project # specific path
+/cs:init              # current directory
+/cs:init ./my-project # specific path
 ```
 
 **What it generates:**
@@ -47,12 +47,12 @@ Generate complete `.claude/` configuration from codebase analysis.
 
 **If `.claude/` already exists:** merges intelligently, proposing each change for your approval.
 
-### `/setup:sync`
+### `/cs:sync`
 
 Synchronize configuration with current codebase state.
 
 ```bash
-/setup:sync
+/cs:sync
 ```
 
 Runs diagnostics (built-in doctor) and proposes targeted fixes:
@@ -64,12 +64,12 @@ Runs diagnostics (built-in doctor) and proposes targeted fixes:
 
 Each proposal presented one at a time for your approval. Stateless - no cache or sync state files.
 
-### `/setup:learn`
+### `/cs:learn`
 
 Learn from the current conversation session.
 
 ```bash
-/setup:learn
+/cs:learn
 ```
 
 Analyzes the session for:
@@ -82,7 +82,7 @@ Proposes updates to skills, CLAUDE.md, and docs. Each change requires your appro
 
 ## Generated Review
 
-`/setup:init` creates a `/review` skill with 6 base dimensions:
+`/cs:init` creates a `/review` skill with 6 base dimensions:
 
 | Dimension | What it checks |
 |---|---|
@@ -105,7 +105,7 @@ Add custom dimensions by creating files in `.claude/skills/review/prompts/`.
 
 ## Ecosystem Detection
 
-During `/setup:init`, the plugin detects installed tools and suggests missing ones:
+During `/cs:init`, the plugin detects installed tools and suggests missing ones:
 
 ```
  Installed: superpowers, playwright MCP
@@ -132,7 +132,7 @@ Extend the registry with `.claude/setup-registry.json`:
 ## Architecture
 
 ```
-/setup:init
+/cs:init
   |
   +- [script] detect-stack.js (zero deps, reads config files)
   |

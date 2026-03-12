@@ -1,6 +1,6 @@
 ---
 name: doctor
-description: Diagnose .claude/ configuration health - broken references, drift, quality issues, obsolete gotchas. Used by /setup:sync.
+description: Diagnose .claude/ configuration health - broken references, drift, quality issues, obsolete gotchas. Used by /cs:sync.
 user-invocable: false
 ---
 

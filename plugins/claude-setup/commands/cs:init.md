@@ -5,7 +5,7 @@ argument-hint: "[project-path]"
 allowed-tools: Agent, Bash, Read, Write, Edit, Glob, Grep
 ---
 
-# /setup:init - Generate .claude/ Configuration
+# /cs:init - Generate .claude/ Configuration
 
 You are the orchestrator for `claude-setup` initialization. Your job is to generate a complete `.claude/` configuration tailored to this specific project. Focus on NON-INFERABLE details only - things an AI agent cannot discover by reading the code itself.
 
