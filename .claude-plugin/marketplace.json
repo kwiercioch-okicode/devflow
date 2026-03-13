@@ -8,7 +8,7 @@
       "name": "cs",
       "source": "./",
       "description": "Auto-generate and maintain .claude/ configuration from your codebase. Non-inferable details only.",
-      "version": "0.4.0"
+      "version": "0.4.1"
     }
   ]
 }
