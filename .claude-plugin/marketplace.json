@@ -1,14 +1,14 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "claude-setup",
-  "description": "Marketplace for claude-setup plugin. Auto-generate and maintain .claude/ configuration from your codebase. Non-inferable details only.",
   "owner": {
     "name": "kwiercioch-okicode"
   },
   "plugins": [
     {
       "name": "cs",
-      "source": "./plugins/claude-setup"
+      "source": "./",
+      "description": "Auto-generate and maintain .claude/ configuration from your codebase. Non-inferable details only.",
+      "version": "0.3.0"
     }
   ]
 }
