@@ -1,5 +1,5 @@
 {
   "name": "cs",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Auto-generate and maintain .claude/ configuration (CLAUDE.md, skills, agents, review) from your codebase. Non-inferable details only."
 }
