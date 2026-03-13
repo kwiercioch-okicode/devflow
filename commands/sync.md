@@ -54,7 +54,13 @@ Evaluate skill quality against research-backed criteria:
 - Does the CLAUDE.md contain unnecessary architecture/structure descriptions?
 - Are there duplicate skills covering the same domain?
 
-Output: list of quality issues with suggested improvements.
+Also check CLAUDE.md template completeness:
+- Read the template from `${CLAUDE_SKILL_DIR}/../templates/CLAUDE.md.template`
+- Compare existing CLAUDE.md against template section by section
+- Flag missing framework sections (Decision Framework, Planning, Verification, Subagents, Code Standards, Lessons) as MISSING proposals
+- Do NOT flag sections the user intentionally removed (check git history if available)
+
+Output: list of quality issues + missing CLAUDE.md sections with suggested additions.
 
 ### Agent D: Gotcha Validation
 For each gotcha/workaround documented in skills:

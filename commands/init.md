@@ -47,13 +47,18 @@ ls -la CLAUDE.md 2>/dev/null
 
 **If `.claude/` does not exist:** Proceed with full generation.
 
-## Step 3: Copy Template CLAUDE.md
+## Step 3: CLAUDE.md Behavioral Framework
 
-If CLAUDE.md does not exist, copy the behavioral framework template:
+Read the template from `${CLAUDE_SKILL_DIR}/../templates/CLAUDE.md.template`.
 
-Read the template from `${CLAUDE_SKILL_DIR}/../templates/CLAUDE.md.template` and write it to the project root as `CLAUDE.md`.
+**If CLAUDE.md does not exist:** Write the template to the project root as `CLAUDE.md`.
 
-If CLAUDE.md already exists, skip this step.
+**If CLAUDE.md already exists (MERGE MODE):**
+- Compare the existing CLAUDE.md against the template section by section
+- Identify missing framework sections (Decision Framework, Planning, Verification, Subagents, Code Standards, Lessons)
+- For each missing section, propose adding it: "Your CLAUDE.md is missing [section]. Add it? (Y/n)"
+- Preserve all existing project-specific content (OpenSpec blocks, custom rules, etc.)
+- Do NOT replace existing sections that already cover the same topic - only add what's missing
 
 ## Step 4: Deep Scan with Parallel Agents
 
