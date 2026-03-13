@@ -27,7 +27,7 @@ Read each file to understand what the current configuration claims about the pro
 
 ## Step 2: Diagnostics (Built-in Doctor)
 
-Launch parallel agents to check 4 dimensions:
+Launch parallel agents to check 6 dimensions:
 
 ### Agent A: Broken References
 For each skill and doc file, check:
@@ -81,6 +81,17 @@ Check the review skill configuration:
 - Do NOT propose replacing project-specific prompts with template versions
 
 Output: list of obsolete gotchas + new undocumented gotchas.
+
+### Agent F: Ecosystem Check
+Check installed tools against the ecosystem registry:
+- Read registry from `${CLAUDE_SKILL_DIR}/../templates/ecosystem-registry.json`
+- Also check for project-local registry at `.claude/setup-registry.json`
+- For each tool in registry, run its `detect` command to check if installed
+- Evaluate `suggest_when` condition against current project (has_frontend, has_docker, etc.)
+- Flag tools that match suggestion criteria but are not installed as INFO proposals
+- Flag tools that are installed but no longer relevant (e.g., docker-mcp when Docker was removed) as OUTDATED
+
+Output: list of ecosystem suggestions (install/remove).
 
 ## Step 3: Present Proposals
 
