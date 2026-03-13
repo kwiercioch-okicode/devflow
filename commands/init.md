@@ -156,20 +156,36 @@ For each significant pattern or domain area discovered, create a skill:
 Create agents only if the project genuinely needs them (e.g., separate frontend/backend repos, complex deployment).
 
 ### 6d. `.claude/skills/review/` - Review Skill
-Generate the multi-dimension review skill with 6 base dimensions adapted to the detected stack:
 
-Create `skills/review/SKILL.md` as the orchestrator that:
-- Dispatches parallel agents for each dimension
-- Collects findings with severity levels (critical/high/medium/low/info)
-- Produces a consolidated report with verdict
+**SKILL.md orchestrator:**
+Read the template from `${CLAUDE_SKILL_DIR}/../templates/review-skill.md.template` and write it as `skills/review/SKILL.md`. This template has the correct report format (collapsible details, verdict rules, uncovered files).
 
-Create `skills/review/prompts/` with one file per dimension:
-- `security.md` - adapted to stack (e.g., SQL injection for PHP, XSS for React)
-- `tests.md` - adapted to testing tools found (PHPUnit patterns, Jest patterns)
-- `architecture.md` - adapted to framework conventions
-- `performance.md` - adapted to stack bottlenecks (N+1 for SQL, re-renders for React)
-- `naming.md` - adapted to conventions found in code
-- `error-handling.md` - adapted to error patterns in the project
+**Review prompts - adapt, don't copy:**
+Read each template from `${CLAUDE_SKILL_DIR}/../templates/review-prompts/`. For each one:
+1. Start with the template as base (it has universal + stack-specific checks)
+2. **Inject project-specific knowledge** discovered by the scanner agents:
+   - Gotchas and traps from Agent 3 → add as "Project-specific checks" section
+   - Domain rules from Agent 2 → add business logic validation checks
+   - Patterns from Agent 4 → add pattern conformance checks
+   - Anomalies from Agent 1 → add known technical debt warnings
+3. Write the adapted prompt to `skills/review/prompts/[dimension].md`
+
+Base dimensions (6):
+- `security.md` - adapted to stack + project-specific auth/access patterns
+- `tests.md` - adapted to testing tools + project test conventions
+- `architecture.md` - adapted to framework + project structure rules
+- `performance.md` - adapted to stack + known bottleneck patterns
+- `naming.md` - adapted to project naming conventions found in code
+- `error-handling.md` - adapted to project error handling patterns
+
+**Additional project-specific dimensions:**
+If the scanner agents discovered domains that warrant their own review dimension (e.g., tenant isolation, API contract compliance, domain-specific validation), create additional prompt files. Each must have concrete, non-inferable checks - not generic advice.
+
+**MERGE MODE - if review already exists:**
+- Compare existing dimensions against the 6 base dimensions
+- Propose adding any missing base dimensions
+- Do NOT replace existing project-specific prompts - they are more valuable than templates
+- If existing SKILL.md has a different format, propose upgrading to template format while preserving custom dimensions
 
 ### 6e. Update CLAUDE.md
 Add project-specific content between the `<!-- GENERATED -->` markers:

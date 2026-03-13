@@ -70,6 +70,16 @@ For each gotcha/workaround documented in skills:
 
 Search for: TODO, HACK, FIXME, WORKAROUND, XXX comments that aren't in any skill.
 
+### Agent E: Review Completeness
+Check the review skill configuration:
+- Does `skills/review/SKILL.md` exist? If not, flag as MISSING.
+- Read template dimensions from `${CLAUDE_SKILL_DIR}/../templates/review-prompts/`
+- Compare against existing `skills/review/prompts/` files
+- Flag missing base dimensions (security, tests, architecture, performance, naming, error-handling)
+- Check if existing prompts are still generic (copy of template) vs adapted to the project
+- If prompts are generic, flag as QUALITY: "Review prompt [X] has no project-specific checks - consider adapting"
+- Do NOT propose replacing project-specific prompts with template versions
+
 Output: list of obsolete gotchas + new undocumented gotchas.
 
 ## Step 3: Present Proposals
