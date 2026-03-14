@@ -57,6 +57,23 @@ SUGGESTION: [how to fix]
 
 Severity levels: `critical`, `high`, `medium`, `low`, `info`
 
+## Self-Evaluation (before consolidation)
+
+After collecting all findings, verify EACH one before including it in the report. For every finding, ask:
+
+### Verification checks:
+1. **Is it real HERE?** — Read the surrounding code. Does the framework/library already handle this? (e.g., "missing error handling" but the framework has global error middleware)
+2. **Is the context complete?** — Is there code elsewhere that addresses this? (e.g., "unused function" but it's called from another module, or it's an API endpoint)
+3. **Does it match project conventions?** — Is the "issue" actually consistent with how the rest of the project does it? If 20 files do it this way, it's a convention, not a bug.
+4. **Is it actionable?** — Can the developer fix this in THIS PR, or is it a pre-existing issue unrelated to the changes?
+
+### Disposition:
+- **KEEP** — verified as a real issue in this codebase
+- **DOWNGRADE** — real but less severe than initially assessed (adjust severity)
+- **DISCARD** — false positive, framework handles it, or not actionable in this PR
+
+Only KEEP and DOWNGRADE findings appear in the report. Track discard count per dimension.
+
 ## Consolidated Report
 
 After all agents complete, produce:
@@ -91,6 +108,21 @@ After all agents complete, produce:
 **Suggestion:** [How to fix]
 
 </details>
+```
+
+### Self-Evaluation Summary
+
+After the verdict, show what was filtered:
+
+```
+Self-evaluation: [X] findings verified, [Y] downgraded, [Z] discarded as false positives
+```
+
+If any findings were discarded, list them briefly so the user can override:
+
+```
+Discarded (false positives):
+  - [dimension] [title]: [reason discarded]
 ```
 
 ### Verdict Rules

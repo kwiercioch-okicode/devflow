@@ -129,10 +129,26 @@ When applying learnings:
 - Add new content in appropriate section (gotchas with gotchas, patterns with patterns)
 - Preserve existing content - append, don't replace
 
-### Quality filters:
-- Skip learnings that are generic (Claude already knows them)
-- Skip learnings that are session-specific with no future value
-- Skip learnings already captured in existing skills
+### Quality filters (CRITICAL — apply BEFORE presenting any learning):
+
+Every learning MUST pass the **non-inferable test**: would a competent developer using this stack already know this? If yes, skip it.
+
+**SKIP these — they are generic knowledge, not project-specific:**
+- UI/UX common sense (tooltips disappear on hover-out, modals block interaction, etc.)
+- Framework basics (React re-renders on state change, useEffect cleanup, etc.)
+- Language fundamentals (null checks, async/await patterns, type narrowing, etc.)
+- General best practices (error handling, input validation, accessibility, etc.)
+
+**KEEP these — they are non-inferable without reading THIS project's code:**
+- Project-specific conventions ("we use CopyableField component, not custom click-to-copy")
+- Hidden dependencies between modules that aren't obvious from imports
+- Business rules encoded in code that contradict intuition
+- Workarounds for known bugs in project's specific dependency versions
+- Environment/deployment quirks unique to this setup
+
+Also skip:
+- Learnings that are session-specific with no future value
+- Learnings already captured in existing skills
 - Combine related learnings into a single proposal
 
 ## Step 6: Final Summary
