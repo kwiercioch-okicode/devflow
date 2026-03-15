@@ -7,7 +7,7 @@
     {
       "name": "cs",
       "source": "./",
-      "description": "Auto-generate and maintain .claude/ configuration from your codebase. Non-inferable details only.",
+      "description": "Generate skills, review dimensions, and project context that make Claude actually understand YOUR codebase — not generic advice.",
       "version": "0.6.0"
     }
   ]
