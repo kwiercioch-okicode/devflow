@@ -12,6 +12,13 @@
       "type": "command",
       "command": "node \"${PLUGIN_DIR}/scripts/lib/branch-guard.js\"",
       "description": "Block commits and pushes to main/master"
+    },
+    {
+      "event": "PreToolUse",
+      "matcher": "Bash",
+      "type": "command",
+      "command": "node \"${PLUGIN_DIR}/scripts/lib/review-gate.js\"",
+      "description": "Block PR creation without review verdict"
     }
   ]
 }
