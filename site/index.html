@@ -539,6 +539,172 @@ body::after {
 .cmd-item .cmd-name { color: var(--accent); font-weight: 500; }
 .cmd-item .cmd-desc { color: var(--text-dim); font-size: 0.7rem; }
 
+.cmd-item[data-cmd] { cursor: pointer; }
+.cmd-item[data-cmd]:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+
+/* Detail drawer */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.drawer-overlay.open { opacity: 1; pointer-events: all; }
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(520px, 90vw);
+  height: 100vh;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  z-index: 101;
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer.open { transform: translateX(0); }
+
+.drawer-header {
+  padding: 2rem 2rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.drawer-header .drawer-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.drawer-header .drawer-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.drawer-header .drawer-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-top: 0.25rem;
+}
+
+.drawer-close {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.drawer-close:hover {
+  border-color: var(--accent-dim);
+  color: var(--text);
+  background: var(--bg-card);
+}
+
+.drawer-body {
+  padding: 1.5rem 2rem 2rem;
+  flex: 1;
+}
+
+.drawer-section {
+  margin-bottom: 1.5rem;
+}
+
+.drawer-section-title {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.drawer-tag {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  margin-right: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.drawer-tag.script { background: #00e87b1a; color: var(--accent); border: 1px solid var(--accent-dim); }
+.drawer-tag.hook { background: #ef44441a; color: var(--danger); border: 1px solid #ef444433; }
+.drawer-tag.agent { background: #3b82f61a; color: var(--blue); border: 1px solid #3b82f633; }
+.drawer-tag.flag { background: #a78bfa1a; color: var(--purple); border: 1px solid #a78bfa33; }
+
+.drawer-flow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0.75rem 0;
+}
+
+.drawer-flow-step {
+  padding: 0.4rem 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: var(--text);
+}
+
+.drawer-flow-arrow {
+  color: var(--accent);
+  font-size: 0.8rem;
+}
+
+.drawer-detail-text {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+
+.drawer-code {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  color: var(--accent);
+  margin: 0.5rem 0;
+  overflow-x: auto;
+}
+
+.drawer-kv {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 1rem;
+  font-size: 0.8rem;
+}
+
+.drawer-kv dt { color: var(--text-muted); }
+.drawer-kv dd { color: var(--text); }
+
 /* Install block */
 .install {
   background: var(--bg-card);
@@ -839,19 +1005,19 @@ body::after {
   <p class="section-subtitle">df: plugin — SDLC workflow &nbsp;|&nbsp; cs: plugin — config generation</p>
 
   <div class="cmd-grid">
-    <div class="cmd-item" data-reveal><span class="cmd-icon">🌿</span><div><div class="cmd-name">/df:worktree</div><div class="cmd-desc">Create & manage worktrees</div></div></div>
-    <div class="cmd-item" data-reveal data-delay="50"><span class="cmd-icon">📋</span><div><div class="cmd-name">/df:plan</div><div class="cmd-desc">Structured implementation plan</div></div></div>
-    <div class="cmd-item" data-reveal data-delay="100"><span class="cmd-icon">⚡</span><div><div class="cmd-name">/df:execute</div><div class="cmd-desc">Wave-based plan execution</div></div></div>
-    <div class="cmd-item" data-reveal data-delay="150"><span class="cmd-icon">💾</span><div><div class="cmd-name">/df:commit</div><div class="cmd-desc">Smart commit + style detection</div></div></div>
-    <div class="cmd-item" data-reveal data-delay="200"><span class="cmd-icon">🔍</span><div><div class="cmd-name">/df:review</div><div class="cmd-desc">Multi-dimension code review</div></div></div>
-    <div class="cmd-item" data-reveal data-delay="250"><span class="cmd-icon">🚀</span><div><div class="cmd-name">/df:pr</div><div class="cmd-desc">Auto PR description</div></div></div>
-    <div class="cmd-item" data-reveal data-delay="300"><span class="cmd-icon">🏷️</span><div><div class="cmd-name">/df:version</div><div class="cmd-desc">Semver + changelog</div></div></div>
-    <div class="cmd-item" data-reveal data-delay="350"><span class="cmd-icon">📦</span><div><div class="cmd-name">/df:ship</div><div class="cmd-desc">End-to-end pipeline</div></div></div>
-    <div class="cmd-item" data-reveal data-delay="400"><span class="cmd-icon">🧪</span><div><div class="cmd-name">/df:test-first</div><div class="cmd-desc">TDD workflow enforcement</div></div></div>
-    <div class="cmd-item" data-reveal data-delay="450"><span class="cmd-icon">🩺</span><div><div class="cmd-name">/df:doctor</div><div class="cmd-desc">Guardrails health check</div></div></div>
-    <div class="cmd-item" data-reveal data-delay="500" style="border-color: #a78bfa33;"><span class="cmd-icon">🔧</span><div><div class="cmd-name" style="color: var(--purple);">/cs:init</div><div class="cmd-desc">Generate .claude/ config</div></div></div>
-    <div class="cmd-item" data-reveal data-delay="550" style="border-color: #a78bfa33;"><span class="cmd-icon">🔄</span><div><div class="cmd-name" style="color: var(--purple);">/cs:sync</div><div class="cmd-desc">Sync config with codebase</div></div></div>
-    <div class="cmd-item" data-reveal data-delay="600" style="border-color: #a78bfa33;"><span class="cmd-icon">🏥</span><div><div class="cmd-name" style="color: var(--purple);">/cs:doctor</div><div class="cmd-desc">Diagnose .claude/ health</div></div></div>
+    <div class="cmd-item" data-reveal data-cmd="worktree"><span class="cmd-icon">🌿</span><div><div class="cmd-name">/df:worktree</div><div class="cmd-desc">Create & manage worktrees</div></div></div>
+    <div class="cmd-item" data-reveal data-delay="50" data-cmd="plan"><span class="cmd-icon">📋</span><div><div class="cmd-name">/df:plan</div><div class="cmd-desc">Structured implementation plan</div></div></div>
+    <div class="cmd-item" data-reveal data-delay="100" data-cmd="execute"><span class="cmd-icon">⚡</span><div><div class="cmd-name">/df:execute</div><div class="cmd-desc">Wave-based plan execution</div></div></div>
+    <div class="cmd-item" data-reveal data-delay="150" data-cmd="commit"><span class="cmd-icon">💾</span><div><div class="cmd-name">/df:commit</div><div class="cmd-desc">Smart commit + style detection</div></div></div>
+    <div class="cmd-item" data-reveal data-delay="200" data-cmd="review"><span class="cmd-icon">🔍</span><div><div class="cmd-name">/df:review</div><div class="cmd-desc">Multi-dimension code review</div></div></div>
+    <div class="cmd-item" data-reveal data-delay="250" data-cmd="pr"><span class="cmd-icon">🚀</span><div><div class="cmd-name">/df:pr</div><div class="cmd-desc">Auto PR description</div></div></div>
+    <div class="cmd-item" data-reveal data-delay="300" data-cmd="version"><span class="cmd-icon">🏷️</span><div><div class="cmd-name">/df:version</div><div class="cmd-desc">Semver + changelog</div></div></div>
+    <div class="cmd-item" data-reveal data-delay="350" data-cmd="ship"><span class="cmd-icon">📦</span><div><div class="cmd-name">/df:ship</div><div class="cmd-desc">End-to-end pipeline</div></div></div>
+    <div class="cmd-item" data-reveal data-delay="400" data-cmd="test-first"><span class="cmd-icon">🧪</span><div><div class="cmd-name">/df:test-first</div><div class="cmd-desc">TDD workflow enforcement</div></div></div>
+    <div class="cmd-item" data-reveal data-delay="450" data-cmd="doctor"><span class="cmd-icon">🩺</span><div><div class="cmd-name">/df:doctor</div><div class="cmd-desc">Guardrails health check</div></div></div>
+    <div class="cmd-item" data-reveal data-delay="500" data-cmd="cs-init" style="border-color: #a78bfa33;"><span class="cmd-icon">🔧</span><div><div class="cmd-name" style="color: var(--purple);">/cs:init</div><div class="cmd-desc">Generate .claude/ config</div></div></div>
+    <div class="cmd-item" data-reveal data-delay="550" data-cmd="cs-sync" style="border-color: #a78bfa33;"><span class="cmd-icon">🔄</span><div><div class="cmd-name" style="color: var(--purple);">/cs:sync</div><div class="cmd-desc">Sync config with codebase</div></div></div>
+    <div class="cmd-item" data-reveal data-delay="600" data-cmd="cs-doctor" style="border-color: #a78bfa33;"><span class="cmd-icon">🏥</span><div><div class="cmd-name" style="color: var(--purple);">/cs:doctor</div><div class="cmd-desc">Diagnose .claude/ health</div></div></div>
   </div>
 </section>
 
@@ -864,6 +1030,20 @@ body::after {
     <code>/plugin install cs@devflow</code>
   </div>
 </section>
+
+<!-- Detail Drawer -->
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div>
+      <span class="drawer-icon" id="drawerIcon"></span>
+      <div class="drawer-title" id="drawerTitle"></div>
+      <div class="drawer-subtitle" id="drawerSubtitle"></div>
+    </div>
+    <button class="drawer-close" id="drawerClose">&times;</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</div>
 
 <footer class="footer">
   Built for <a href="https://github.com/kwiercioch-okicode/devflow">devflow</a> — Claude Code plugin marketplace
@@ -885,6 +1065,191 @@ const observer = new IntersectionObserver((entries) => {
 
 document.querySelectorAll('[data-reveal]').forEach(el => {
   observer.observe(el);
+});
+
+// Command detail data
+const CMD_DATA = {
+  worktree: {
+    icon: '🌿', title: '/df:worktree', subtitle: 'Git worktree management with infrastructure lifecycle',
+    script: 'dev-env.sh', hook: 'session-guard.js',
+    flags: ['create <branch>', 'remove <name>', 'up <name>', 'down <name>', 'status <name>', 'list', 'switch <name>'],
+    flow: ['Read .dev-env.yml', 'Detect repos', 'Create/manage worktree', 'Start/stop infra'],
+    description: 'Manages isolated dev environments via git worktrees. Multi-repo aware - creates worktrees across all repos defined in .dev-env.yml. Handles infrastructure lifecycle (start/stop services) per worktree.',
+    details: { 'Config': '.dev-env.yml in project root', 'Multi-repo': 'Auto-detects sibling git repos', 'Infra': 'Custom scripts.up/scripts.down or auto-detect' }
+  },
+  plan: {
+    icon: '📋', title: '/df:plan', subtitle: 'Structured implementation plan from any input source',
+    script: 'plan-prepare.js',
+    flags: ['--from-file <path>', '--from-url <url>', '<ticket-id>', '<text description>'],
+    flow: ['Detect source type', 'Pre-fetch data', 'Explore codebase', 'Generate plan', 'Save to .devflow/'],
+    description: 'Generates structured implementation plans with task groups, dependencies, and wave structure. Accepts input from conversation, text, files, ticket IDs (Jira), URLs, or OpenSpec changes. Output is compatible with /df:execute.',
+    details: { 'Source types': 'conversation, text, file, ticket, url', 'OpenSpec': 'Auto-detects and loads change specs', 'Output': '.devflow/plan-<branch>-<ts>.md' }
+  },
+  execute: {
+    icon: '⚡', title: '/df:execute', subtitle: 'Wave-based parallel plan execution with verification',
+    script: 'execute-prepare.js',
+    flags: ['<plan-file-path>', '(auto-finds latest in .devflow/)'],
+    flow: ['Parse plan', 'Build dependency graph', 'Group into waves', 'Dispatch agents parallel', 'Verify deliverables'],
+    description: 'Parses a markdown plan into task groups, resolves dependencies, builds wave grouping. Dispatches all groups within a wave in parallel using Agent tool. Verifies deliverables exist after each wave. Passes inter-wave context.',
+    details: { 'Wave logic': 'Tasks with no deps = wave 1, then cascade', 'Verification': 'Checks files exist, runs tests', 'Circular deps': 'Detected and reported' }
+  },
+  commit: {
+    icon: '💾', title: '/df:commit', subtitle: 'Smart commit with project style detection',
+    script: 'commit-prepare.js', hook: 'branch-guard.js',
+    flags: ['--auto', '--amend'],
+    flow: ['Analyze staged files', 'Detect commit style', 'Generate message', 'Confirm or auto-commit'],
+    description: 'Pre-computes staged files, diff, and recent commit messages. Detects project commit style (conventional, bracketed, emoji, freeform) from last 15 commits with 50% threshold. Generates message matching detected style.',
+    details: { 'Style detection': 'conventional / bracketed / emoji / freeform', 'Threshold': '50% of last 15 commits', 'Multi-repo': 'Commits to each repo separately' }
+  },
+  review: {
+    icon: '🔍', title: '/df:review', subtitle: 'Multi-dimension code review with parallel agents',
+    script: 'review-prepare.js', agent: 'review-orchestrator.md',
+    flags: ['--base <branch>', '--committed', '--staged', '--working', '--dimensions <a,b,c>', '--dry-run'],
+    flow: ['Pre-compute diff & dimensions', 'Map files to dimensions', 'Dispatch dimension agents', 'Collect findings', 'Write verdict JSON'],
+    description: 'Discovers review dimensions from .claude/review-dimensions/ or .claude/skills/review/prompts/. Maps changed files to relevant dimensions. Dispatches all dimension agents in parallel. Writes structured verdict to .devflow/review-verdict.json.',
+    details: { 'Discovery': '.claude/review-dimensions/*.md', 'Verdict file': '.devflow/review-verdict.json', 'Verdicts': 'APPROVED / APPROVED_WITH_NOTES / CHANGES_REQUESTED' }
+  },
+  pr: {
+    icon: '🚀', title: '/df:pr', subtitle: 'Auto-generated PR description from commits and diff',
+    script: 'pr-prepare.js', hook: 'review-gate.js',
+    flags: ['--base <branch>', '--draft', '--auto'],
+    flow: ['Pre-compute commits & diff', 'Check review verdict', 'Generate title + body', 'Push if needed', 'Create PR'],
+    description: 'Pre-computes structured commits, diff stat, remote state, and discovers PR templates. Loads review verdict if available. Generates PR title and body, fills in template if found. Review gate hook blocks creation without passing review.',
+    details: { 'Template discovery': '.claude/pr-template.md or .github/', 'Review gate': 'Blocks if no verdict or CHANGES_REQUESTED', 'Warnings': 'Uncommitted changes, large PR (>500 files)' }
+  },
+  version: {
+    icon: '🏷️', title: '/df:version', subtitle: 'Semantic versioning with auto-detection and changelog',
+    script: 'version-prepare.js',
+    flags: ['--bump patch|minor|major', '--auto', 'patch', 'minor', 'major'],
+    flow: ['Detect current version', 'Analyze commits', 'Auto-detect bump type', 'Generate changelog', 'Tag & push'],
+    description: 'Detects current version from git tags or package.json. Analyzes commits since last tag to auto-detect bump type (BREAKING CHANGE = major, feat = minor, else patch). Generates changelog draft. Supports multi-repo tagging.',
+    details: { 'Version sources': 'Git tags, package.json', 'Auto-detect': 'Conventional commits analysis', 'Multi-repo': 'Tags each repo with same version' }
+  },
+  ship: {
+    icon: '📦', title: '/df:ship', subtitle: 'End-to-end pipeline: commit, review, PR',
+    script: 'ship-prepare.js',
+    flags: ['--skip commit,review,pr', '--auto', '--dry-run', '--draft'],
+    flow: ['Compute pipeline steps', 'Display plan', 'Confirm', '/df:commit', '/df:review', 'Check verdict', '/df:pr'],
+    description: 'Thin orchestrator (~90 lines) that chains sub-commands sequentially. Ship-prepare.js determines which steps run based on context (uncommitted files, skip flags, gh auth). Review verdict gate between review and PR - stops pipeline on critical/high findings.',
+    details: { 'Steps': 'commit -> review -> verdict check -> pr', 'Verdict gate': 'Reads .devflow/review-verdict.json', 'No config file': 'YAGNI - --skip flags suffice' }
+  },
+  'test-first': {
+    icon: '🧪', title: '/df:test-first', subtitle: 'TDD workflow: failing test before production code',
+    flags: ['(no flags - workflow guide)'],
+    flow: ['Identify change type', 'Write failing test', 'Verify red/green', 'Hand off to implementation'],
+    description: 'Enforces test-driven development. Bug fix: write test that reproduces bug (must fail). Feature: write test specifying behavior (must fail). Refactor: write characterization test (must pass). Exceptions: infra/config, CSS-only, pure typos.',
+    details: { 'Bug fix': 'Test reproduces bug -> FAIL', 'Feature': 'Test specifies behavior -> FAIL', 'Refactor': 'Characterization test -> PASS' }
+  },
+  doctor: {
+    icon: '🩺', title: '/df:doctor', subtitle: 'Guardrails health check - 11 checks, zero LLM',
+    script: 'doctor.js',
+    flags: ['(no flags)'],
+    flow: ['Check hooks installed', 'Verify dimensions', 'Test project detection', 'Check verdict files', 'Report'],
+    description: 'Deterministic health check (zero LLM involvement). Verifies hooks are installed and scripts exist, discovers review dimensions, checks multi-repo/worktree/OpenSpec detection, validates verdict files, tests gh CLI authentication. 11 checks total.',
+    details: { 'Hooks': 'Verifies scripts exist at expected paths', 'Discovery': 'Dimensions, multi-repo, worktree, OpenSpec', 'gh CLI': 'Checks authentication status' }
+  },
+  'cs-init': {
+    icon: '🔧', title: '/cs:init', subtitle: 'Generate .claude/ configuration from codebase analysis',
+    script: 'detect-stack.js', agent: 'scanner + compositor',
+    flags: ['<path>'],
+    flow: ['Detect tech stack', 'Scan for anomalies', 'Scan for domain rules', 'Scan for traps', 'Compose .claude/ files'],
+    description: 'Orchestrates codebase scanning and config generation. Detects tech stack via detect-stack.js. Dispatches scanner agents for anomalies, domain rules, traps, and patterns. Compositor combines findings into CLAUDE.md, skills, agents, and review dimensions. Focuses on NON-INFERABLE details only.',
+    details: { 'Output': 'CLAUDE.md, .claude/skills/, .claude/docs/', 'Merge': 'If .claude/ exists, merges intelligently', 'Philosophy': 'Only non-inferable details' }
+  },
+  'cs-sync': {
+    icon: '🔄', title: '/cs:sync', subtitle: 'Synchronize .claude/ config with current codebase',
+    flags: ['(no flags - stateless)'],
+    flow: ['Scan codebase', 'Compare vs .claude/', 'Detect drift', 'Propose fixes', 'Apply on approval'],
+    description: 'Compares existing .claude/ configuration against current codebase state. Detects broken references (deleted files/symbols), outdated gotchas, drift (code changed but skills didn\'t follow), missing coverage (new modules without skills), and quality issues.',
+    details: { 'Stateless': 'No cache or sync timestamps', 'Checks': 'Broken refs, drift, missing coverage, quality', 'Interactive': 'Each proposal presented for approval' }
+  },
+  'cs-doctor': {
+    icon: '🏥', title: '/cs:doctor', subtitle: 'Diagnose .claude/ configuration health',
+    flags: ['(no flags)'],
+    flow: ['Check plugin installation', 'Validate templates', 'Check project config', 'Report issues'],
+    description: 'Diagnostic agent for the setup plugin. Checks plugin installation, validates templates exist and are parseable, verifies project configuration, and checks ecosystem tool availability.',
+    details: { 'Scope': '.claude/ config health (not guardrails)', 'vs /df:doctor': 'cs:doctor checks config, df:doctor checks hooks' }
+  }
+};
+
+// Drawer logic
+const overlay = document.getElementById('drawerOverlay');
+const drawer = document.getElementById('drawer');
+const drawerClose = document.getElementById('drawerClose');
+
+function openDrawer(cmdKey) {
+  const data = CMD_DATA[cmdKey];
+  if (!data) return;
+
+  document.getElementById('drawerIcon').textContent = data.icon;
+  document.getElementById('drawerTitle').textContent = data.title;
+  document.getElementById('drawerSubtitle').textContent = data.subtitle;
+
+  let html = '';
+
+  // Tags
+  html += '<div class="drawer-section"><div class="drawer-section-title">Components</div>';
+  if (data.script) html += `<span class="drawer-tag script">${data.script}</span>`;
+  if (data.hook) html += `<span class="drawer-tag hook">${data.hook}</span>`;
+  if (data.agent) html += `<span class="drawer-tag agent">${data.agent}</span>`;
+  html += '</div>';
+
+  // Flow
+  html += '<div class="drawer-section"><div class="drawer-section-title">Flow</div><div class="drawer-flow">';
+  data.flow.forEach((step, i) => {
+    if (i > 0) html += '<span class="drawer-flow-arrow">&#8594;</span>';
+    html += `<span class="drawer-flow-step">${step}</span>`;
+  });
+  html += '</div></div>';
+
+  // Description
+  html += `<div class="drawer-section"><div class="drawer-section-title">Description</div><p class="drawer-detail-text">${data.description}</p></div>`;
+
+  // Flags
+  if (data.flags) {
+    html += '<div class="drawer-section"><div class="drawer-section-title">Arguments</div>';
+    data.flags.forEach(f => {
+      html += `<div class="drawer-code">${f}</div>`;
+    });
+    html += '</div>';
+  }
+
+  // Details
+  if (data.details) {
+    html += '<div class="drawer-section"><div class="drawer-section-title">Details</div><dl class="drawer-kv">';
+    Object.entries(data.details).forEach(([k, v]) => {
+      html += `<dt>${k}</dt><dd>${v}</dd>`;
+    });
+    html += '</dl></div>';
+  }
+
+  document.getElementById('drawerBody').innerHTML = html;
+  drawer.classList.add('open');
+  overlay.classList.add('open');
+}
+
+function closeDrawer() {
+  drawer.classList.remove('open');
+  overlay.classList.remove('open');
+}
+
+document.querySelectorAll('[data-cmd]').forEach(el => {
+  el.addEventListener('click', () => openDrawer(el.dataset.cmd));
+});
+
+overlay.addEventListener('click', closeDrawer);
+drawerClose.addEventListener('click', closeDrawer);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+// Also make pipeline steps clickable
+const PIPELINE_CMD_MAP = { 'Plan': 'plan', 'Execute': 'execute', 'Commit': 'commit', 'Review': 'review', 'Pull Request': 'pr' };
+document.querySelectorAll('.pipeline-step').forEach(el => {
+  const label = el.querySelector('.step-label')?.textContent;
+  const cmd = PIPELINE_CMD_MAP[label];
+  if (cmd) {
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', () => openDrawer(cmd));
+  }
 });
 </script>
 
