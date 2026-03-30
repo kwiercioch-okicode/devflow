@@ -1,0 +1,73 @@
+---
+name: git-workflow
+description: "Project-specific git context - repository structure, multi-repo coordination, pre-commit hooks, paths. Generic git operations handled by /df:commit, /df:pr, /df:worktree."
+allowed-tools:
+  - Bash
+  - Read
+---
+
+# Git Context
+
+Project-specific git details that devflow commands need to know about.
+
+{{#if multiRepo}}
+## Repository Structure
+
+**Multiple git repositories detected:**
+
+```
+{{repoRoot}}/
+{{#each repos}}
+├── {{this.name}}/{{#if this.description}}            # {{this.description}}{{/if}}
+{{/each}}
+```
+
+### Verify Repository Before Git Commands
+
+```bash
+pwd
+# Expected: one of the repo directories above
+# NOT: the parent directory
+
+git remote -v
+{{#each repos}}
+# {{this.name}}: {{this.remote}}
+{{/each}}
+```
+
+## Multi-Repository Commits
+
+When changes span multiple repos, commit to each separately:
+
+```bash
+{{#each repos}}
+cd {{../repoRoot}}/{{this.name}}
+git add . && git status && git commit -m "{{this.commitPrefix}}: ..."
+
+{{/each}}
+```
+{{/if}}
+
+{{#if preCommitHook}}
+## Pre-commit Hook
+
+Tests run automatically on commit:
+
+```bash
+# Hook location: {{preCommitHook.path}}
+# Command:
+{{preCommitHook.command}}
+```
+{{/if}}
+
+{{#if commitLanguage}}
+## Commit Language
+
+All git content (commit messages, branch names, PR titles) in {{commitLanguage}}.
+{{/if}}
+
+{{#if branchConventions}}
+## Branch Naming
+
+{{branchConventions}}
+{{/if}}
