@@ -2,5 +2,5 @@
   "name": "cs",
   "description": "Generate and maintain .claude/ configuration from codebase analysis. Scans for non-inferable details, domain rules, and traps.",
   "version": "0.1.0",
-  "author": "kwiercioch-okicode"
+  "author": { "name": "kwiercioch-okicode" }
 }

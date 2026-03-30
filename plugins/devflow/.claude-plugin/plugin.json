@@ -2,5 +2,5 @@
   "name": "df",
   "description": "SDLC workflow automation: plan, execute, commit, review, PR, version, ship. With guardrail hooks and worktree management.",
   "version": "0.1.0",
-  "author": "kwiercioch-okicode"
+  "author": { "name": "kwiercioch-okicode" }
 }
