@@ -389,6 +389,19 @@ body::after {
 .guardrail-card.gate .guardrail-type { color: var(--pink); }
 .guardrail-card.nondeterministic .guardrail-type { color: var(--purple); }
 
+.source-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 100px;
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+  margin-left: 0.5rem;
+}
+.badge-plugin { background: #00e87b1a; color: var(--accent); border: 1px solid var(--accent-dim); }
+.badge-project { background: #a78bfa1a; color: var(--purple); border: 1px solid #a78bfa33; }
+
 .guardrail-name {
   font-family: var(--font-display);
   font-weight: 600;
@@ -958,9 +971,12 @@ body::after {
 <!-- Guardrails -->
 <section class="section">
   <h2 class="section-title">Guardrails</h2>
-  <p class="section-subtitle">Two layers of protection - deterministic hooks that always fire, and skill-based rules the LLM must follow</p>
+  <p class="section-subtitle">Three layers of protection - deterministic hooks, portable process rules from plugin, and project-specific domain rules</p>
 
-  <h3 style="font-family: var(--font-display); font-size: 1rem; color: var(--danger); margin-bottom: 1rem; padding-left: 1.5rem;">Deterministic (hooks - always enforced)</h3>
+  <h3 style="font-family: var(--font-display); font-size: 1rem; color: var(--danger); margin-bottom: 1rem; padding-left: 1.5rem;">
+    Deterministic <span class="source-badge badge-plugin">df plugin</span>
+    <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 300;">- hooks that always fire, zero LLM involvement</span>
+  </h3>
   <div class="guardrails">
     <div class="guardrail-card deterministic" data-reveal data-guard="branch-guard">
       <div class="guardrail-type">Deterministic Hook</div>
@@ -1019,48 +1035,54 @@ body::after {
     </div>
   </div>
 
-  <h3 style="font-family: var(--font-display); font-size: 1rem; color: var(--purple); margin: 2rem 0 1rem; padding-left: 1.5rem;">Non-deterministic (skill-based - LLM must follow)</h3>
+  <h3 style="font-family: var(--font-display); font-size: 1rem; color: var(--accent); margin: 2rem 0 1rem; padding-left: 1.5rem;">
+    Process Rules <span class="source-badge badge-plugin">df plugin</span>
+    <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 300;">- portable, every project gets these</span>
+  </h3>
   <div class="guardrails">
-    <div class="guardrail-card nondeterministic" data-reveal data-guard="nd-brainstorming">
-      <div class="guardrail-type">Mandatory Step</div>
+    <div class="guardrail-card nondeterministic" data-reveal data-guard="nd-brainstorming" style="border-color: #00e87b22;">
+      <div class="guardrail-type" style="color: var(--accent);">Process Rule (plugin)</div>
       <div class="guardrail-name">Brainstorming Before Creative Work</div>
-      <div class="guardrail-desc">Any creative work - new features, UI, behavior changes - must start with brainstorming skill to explore intent and design before implementation.</div>
-      <div class="guardrail-event">CLAUDE.md → Mandatory Steps table</div>
+      <div class="guardrail-desc">New features, UI, behavior changes must start with exploration before implementation.</div>
+      <div class="guardrail-event">process-rules skill → auto-loaded</div>
     </div>
-
-    <div class="guardrail-card nondeterministic" data-reveal data-delay="100" data-guard="nd-drift-check">
-      <div class="guardrail-type">Process Rule</div>
+    <div class="guardrail-card nondeterministic" data-reveal data-delay="100" data-guard="nd-drift-check" style="border-color: #00e87b22;">
+      <div class="guardrail-type" style="color: var(--accent);">Process Rule (plugin)</div>
       <div class="guardrail-name">Drift Check</div>
-      <div class="guardrail-desc">After every 3+ autonomous steps, pause and re-read the original request. Confirm alignment. Stop and explain if scope shifted.</div>
-      <div class="guardrail-event">CLAUDE.md → When to Stop and Ask</div>
+      <div class="guardrail-desc">After 3+ autonomous steps, pause and re-read original request. Stop if scope shifted.</div>
+      <div class="guardrail-event">process-rules skill → auto-loaded</div>
     </div>
-
-    <div class="guardrail-card nondeterministic" data-reveal data-delay="200" data-guard="nd-self-review">
-      <div class="guardrail-type">Process Rule</div>
+    <div class="guardrail-card nondeterministic" data-reveal data-delay="200" data-guard="nd-self-review" style="border-color: #00e87b22;">
+      <div class="guardrail-type" style="color: var(--accent);">Process Rule (plugin)</div>
       <div class="guardrail-name">Self-Review Before Done</div>
-      <div class="guardrail-desc">Re-read every changed file. Check for: leftover debug code, hardcoded values, baked-in assumptions, unhandled edge cases.</div>
-      <div class="guardrail-event">CLAUDE.md → Verification</div>
+      <div class="guardrail-desc">Re-read every changed file. Check for debug code, hardcoded values, baked-in assumptions.</div>
+      <div class="guardrail-event">process-rules skill → auto-loaded</div>
+    </div>
+    <div class="guardrail-card nondeterministic" data-reveal data-delay="300" data-guard="nd-stop-ask" style="border-color: #00e87b22;">
+      <div class="guardrail-type" style="color: var(--accent);">Process Rule (plugin)</div>
+      <div class="guardrail-name">Stop and Ask</div>
+      <div class="guardrail-desc">Stop when: ambiguous requirements, API/schema changes, 2 failed approaches, scope growth, unknown code.</div>
+      <div class="guardrail-event">process-rules skill → auto-loaded</div>
+    </div>
+  </div>
+
+  <h3 style="font-family: var(--font-display); font-size: 1rem; color: var(--purple); margin: 2rem 0 1rem; padding-left: 1.5rem;">
+    Domain Rules <span class="source-badge badge-project">per project</span>
+    <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 300;">- generated by /cs:init, project-specific</span>
+  </h3>
+  <div class="guardrails">
+    <div class="guardrail-card nondeterministic" data-reveal data-guard="nd-review-dimensions">
+      <div class="guardrail-type" style="color: var(--purple);">Domain Rule (project)</div>
+      <div class="guardrail-name">Review Dimensions</div>
+      <div class="guardrail-desc">Code review dispatches parallel agents for project-specific dimensions. Generated by /cs:init, discovered by /df:review.</div>
+      <div class="guardrail-event">.claude/skills/review/prompts/ → /cs:init generates</div>
     </div>
 
-    <div class="guardrail-card nondeterministic" data-reveal data-delay="300" data-guard="nd-review-dimensions">
-      <div class="guardrail-type">Review Quality</div>
-      <div class="guardrail-name">10 Review Dimensions</div>
-      <div class="guardrail-desc">Code review dispatches parallel agents for: security, architecture, tests, performance, naming, error-handling, openspec, fotigo-expert, ui-ux, data-flow.</div>
-      <div class="guardrail-event">.claude/skills/review/ → dimension prompts</div>
-    </div>
-
-    <div class="guardrail-card nondeterministic" data-reveal data-delay="400" data-guard="nd-domain-rules">
-      <div class="guardrail-type">Domain Constraints</div>
+    <div class="guardrail-card nondeterministic" data-reveal data-delay="100" data-guard="nd-domain-rules">
+      <div class="guardrail-type" style="color: var(--purple);">Domain Rule (project)</div>
       <div class="guardrail-name">Business Rule Invariants</div>
-      <div class="guardrail-desc">Domain-specific skills enforce business rules: package state machines, multi-tenant isolation, session lifecycle, pricing strategies.</div>
-      <div class="guardrail-event">.claude/skills/ → fotigo-expert, selected-photos, backend-patterns</div>
-    </div>
-
-    <div class="guardrail-card nondeterministic" data-reveal data-delay="500" data-guard="nd-stop-ask">
-      <div class="guardrail-type">Safety Net</div>
-      <div class="guardrail-name">Stop and Ask Rules</div>
-      <div class="guardrail-desc">Must stop when: requirements are ambiguous, fix changes public API/schema, two approaches failed, scope grew beyond request, about to delete unknown code.</div>
-      <div class="guardrail-event">CLAUDE.md → When to Stop and Ask</div>
+      <div class="guardrail-desc">Domain-specific skills enforce business rules: state machines, tenant isolation, entity lifecycle, pricing. Unique per project.</div>
+      <div class="guardrail-event">.claude/skills/ → /cs:init generates from codebase scan</div>
     </div>
   </div>
 </section>
