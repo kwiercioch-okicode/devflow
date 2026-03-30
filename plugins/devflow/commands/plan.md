@@ -95,6 +95,20 @@ Display the plan. Ask user:
 
 On approve, save to `.devflow/plan-<branch>-<timestamp>.md`.
 
+**Worktree check:** If `project.worktrees` shows the current branch is `main`, `master`, or `staging`, prompt:
+```
+You're on a protected branch. Start this work in an isolated worktree?
+
+  /df:worktree create <suggested-branch-name>
+
+This keeps main clean and lets you run infrastructure in isolation.
+[y to create / n to continue on current branch]
+```
+
+Derive `<suggested-branch-name>` from the plan title (kebab-case, max 30 chars).
+
+If user confirms: invoke `skill: "df:worktree", args: "create <branch-name>"`, then continue.
+
 If user wants to execute immediately, invoke `/df:execute`.
 
 ## Arguments

@@ -91,6 +91,19 @@ EOF
 
 Add `--draft` if flagged. Display the PR URL.
 
+**Worktree prompt:** After displaying the PR URL, if the current branch is a worktree branch (not main/master/staging), prompt:
+```
+PR created. Work on this branch is done.
+Close the worktree?
+
+  /df:worktree remove <current-branch>
+
+This removes the isolated environment and frees up disk space.
+[y to remove / n to keep]
+```
+
+If user confirms: invoke `skill: "df:worktree", args: "remove <branch-name>"`.
+
 Clean up: `rm -f "$PR_DATA"`
 
 ## Arguments
