@@ -38,7 +38,6 @@ Two plugins in one marketplace:
 | `/df:version` | Semantic versioning + changelog |
 | `/df:ship` | Thin orchestrator: commit -> review -> PR |
 | `/df:doctor` | Guardrails health check |
-| `/df:harvest` | Promote learnings from log to skills/rules/docs |
 
 ### Guardrail Hooks
 
@@ -62,6 +61,7 @@ Every skill that touches git has a JS prepare script that pre-computes data and 
 |---|---|
 | `/cs:init` | Generate `.claude/` configuration from codebase |
 | `/cs:sync` | Synchronize config with current codebase state |
+| `/cs:harvest` | Promote learnings from log to skills/rules/docs |
 | `/cs:doctor` | Diagnose `.claude/` configuration health |
 
 ### Templates

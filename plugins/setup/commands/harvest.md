@@ -3,11 +3,11 @@ description: "Harvest learnings - promote ACTIVE entries from .claude/learnings/
 allowed-tools: [Read, Write, Edit, Glob, Grep, Bash, Agent]
 ---
 
-# /df:harvest
+# /cs:harvest
 
 Harvest accumulated learnings - promote ACTIVE entries from the learnings log into the skills they belong to.
 
-**Announce at start:** "I'm using the df:harvest command."
+**Announce at start:** "I'm using the cs:harvest command."
 
 ## Step 0 - Read the Log
 
@@ -16,14 +16,14 @@ Read `.claude/learnings/log.md`.
 If the file does not exist:
 ```
 Nothing to harvest - .claude/learnings/log.md not found.
-Start capturing learnings and run /df:harvest when you have enough.
+Start capturing learnings and run /cs:harvest when you have enough.
 ```
 Stop.
 
 Count ACTIVE entries. If fewer than 3:
 ```
 Only N ACTIVE entries - not enough to harvest yet.
-Threshold is 10 (doctor warns above this). Come back later.
+Threshold is 10 (df:doctor warns above this). Come back later.
 ```
 Stop.
 

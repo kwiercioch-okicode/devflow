@@ -1107,10 +1107,10 @@ body::after {
     <div class="cmd-item" data-reveal data-delay="300" data-cmd="version"><span class="cmd-icon">🏷️</span><div><div class="cmd-name">/df:version</div><div class="cmd-desc">Semver + changelog</div></div></div>
     <div class="cmd-item" data-reveal data-delay="350" data-cmd="ship"><span class="cmd-icon">📦</span><div><div class="cmd-name">/df:ship</div><div class="cmd-desc">End-to-end pipeline</div></div></div>
     <div class="cmd-item" data-reveal data-delay="400" data-cmd="doctor"><span class="cmd-icon">🩺</span><div><div class="cmd-name">/df:doctor</div><div class="cmd-desc">Guardrails health check</div></div></div>
-    <div class="cmd-item" data-reveal data-delay="450" data-cmd="harvest"><span class="cmd-icon">🌾</span><div><div class="cmd-name">/df:harvest</div><div class="cmd-desc">Promote learnings to skills/rules</div></div></div>
     <div class="cmd-item" data-reveal data-delay="500" data-cmd="cs-init" style="border-color: #a78bfa33;"><span class="cmd-icon">🔧</span><div><div class="cmd-name" style="color: var(--purple);">/cs:init</div><div class="cmd-desc">Generate .claude/ config</div></div></div>
     <div class="cmd-item" data-reveal data-delay="550" data-cmd="cs-sync" style="border-color: #a78bfa33;"><span class="cmd-icon">🔄</span><div><div class="cmd-name" style="color: var(--purple);">/cs:sync</div><div class="cmd-desc">Sync config with codebase</div></div></div>
-    <div class="cmd-item" data-reveal data-delay="600" data-cmd="cs-doctor" style="border-color: #a78bfa33;"><span class="cmd-icon">🏥</span><div><div class="cmd-name" style="color: var(--purple);">/cs:doctor</div><div class="cmd-desc">Diagnose .claude/ health</div></div></div>
+    <div class="cmd-item" data-reveal data-delay="600" data-cmd="cs-harvest" style="border-color: #a78bfa33;"><span class="cmd-icon">🌾</span><div><div class="cmd-name" style="color: var(--purple);">/cs:harvest</div><div class="cmd-desc">Promote learnings to skills/rules</div></div></div>
+    <div class="cmd-item" data-reveal data-delay="650" data-cmd="cs-doctor" style="border-color: #a78bfa33;"><span class="cmd-icon">🏥</span><div><div class="cmd-name" style="color: var(--purple);">/cs:doctor</div><div class="cmd-desc">Diagnose .claude/ health</div></div></div>
   </div>
 </section>
 
@@ -1234,8 +1234,8 @@ const CMD_DATA = {
     description: 'Deterministic health check (zero LLM involvement). Verifies hooks are installed and scripts exist, discovers review dimensions, checks multi-repo/worktree/OpenSpec detection, validates verdict files, tests gh CLI authentication. 11 checks total.',
     details: { 'Hooks': 'Verifies scripts exist at expected paths', 'Discovery': 'Dimensions, multi-repo, worktree, OpenSpec', 'gh CLI': 'Checks authentication status' }
   },
-  harvest: {
-    icon: '🌾', title: '/df:harvest', subtitle: 'Promote accumulated learnings into permanent project artifacts',
+  'cs-harvest': {
+    icon: '🌾', title: '/cs:harvest', subtitle: 'Promote accumulated learnings into permanent project artifacts',
     flags: ['(no flags)'],
     flow: ['Read log.md', 'Count ACTIVE entries', 'Classify by target', 'Confirm plan', 'Promote one by one', 'Mark PROMOTED'],
     description: 'Reads .claude/learnings/log.md and promotes ACTIVE entries into the right permanent home: skill gotcha sections, .claude/rules/ files, .claude/docs/traps.md, or new skill candidates. Each entry is shown with its proposed change before applying. Never batches - promotes one at a time with y/n/skip per entry.',
