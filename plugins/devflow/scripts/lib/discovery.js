@@ -48,22 +48,30 @@ function discoverReviewDimensions(projectRoot) {
  * Looks for sibling directories that are git repos.
  */
 function discoverMultiRepo(projectRoot) {
-  const parent = join(projectRoot, '..');
   const repos = [];
 
-  try {
-    const entries = readdirSync(parent);
-    for (const entry of entries) {
-      const fullPath = join(parent, entry);
-      try {
-        const stat = statSync(fullPath);
-        if (!stat.isDirectory()) continue;
-        if (existsSync(join(fullPath, '.git'))) {
-          repos.push({ name: entry, path: fullPath });
-        }
-      } catch { /* skip inaccessible */ }
-    }
-  } catch { /* parent not readable */ }
+  // Check both parent siblings and children for git repos
+  const dirsToCheck = [join(projectRoot, '..'), projectRoot];
+
+  for (const searchDir of dirsToCheck) {
+    try {
+      const entries = readdirSync(searchDir);
+      for (const entry of entries) {
+        if (entry.startsWith('.')) continue;
+        const fullPath = join(searchDir, entry);
+        try {
+          const stat = statSync(fullPath);
+          if (!stat.isDirectory()) continue;
+          if (existsSync(join(fullPath, '.git'))) {
+            // Avoid duplicates
+            if (!repos.find(r => r.path === fullPath)) {
+              repos.push({ name: entry, path: fullPath });
+            }
+          }
+        } catch { /* skip inaccessible */ }
+      }
+    } catch { /* dir not readable */ }
+  }
 
   return {
     isMultiRepo: repos.length > 1,

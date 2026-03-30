@@ -25,16 +25,33 @@ function main() {
 
   // --- Hooks ---
 
-  // Find installed plugin hooks
+  // Find installed plugin hooks - search recursively in known locations
   const pluginDirs = [];
   const homePlugins = join(process.env.HOME || '', '.claude', 'plugins');
-  if (existsSync(homePlugins)) {
+
+  function findHooksRecursive(dir, depth = 0) {
+    if (depth > 5 || !existsSync(dir)) return;
     try {
-      for (const d of readdirSync(homePlugins)) {
-        const hooksPath = join(homePlugins, d, 'hooks', 'hooks.json');
-        if (existsSync(hooksPath)) pluginDirs.push({ name: d, path: hooksPath });
+      const entries = readdirSync(dir);
+      if (entries.includes('hooks.json') && dir.endsWith('hooks')) {
+        const hooksPath = join(dir, 'hooks.json');
+        const name = dir.replace(homePlugins, '').replace(/\/hooks$/, '').replace(/^\//, '');
+        pluginDirs.push({ name: name || 'devflow', path: hooksPath });
+        return;
       }
-    } catch { /* ignore */ }
+      for (const entry of entries) {
+        const fullPath = join(dir, entry);
+        try {
+          if (require('node:fs').statSync(fullPath).isDirectory()) {
+            findHooksRecursive(fullPath, depth + 1);
+          }
+        } catch { /* skip */ }
+      }
+    } catch { /* skip */ }
+  }
+
+  if (existsSync(homePlugins)) {
+    findHooksRecursive(homePlugins);
   }
 
   // Check local plugin hooks
@@ -49,7 +66,17 @@ function main() {
     for (const pd of pluginDirs) {
       try {
         const hooks = JSON.parse(readFileSync(pd.path, 'utf8'));
-        const hookCount = hooks.hooks ? hooks.hooks.length : 0;
+        // Count hooks in nested format: { hooks: { EventName: [{ hooks: [...] }] } }
+        let hookCount = 0;
+        const hooksObj = hooks.hooks || {};
+        for (const event of Object.keys(hooksObj)) {
+          const matchers = hooksObj[event];
+          if (Array.isArray(matchers)) {
+            for (const matcher of matchers) {
+              hookCount += (matcher.hooks || []).length;
+            }
+          }
+        }
         results.hooks.push(check(`hooks.json (${pd.name})`, true, `${hookCount} hooks configured`));
 
         // Check each hook script exists
