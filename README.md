@@ -62,6 +62,16 @@ Every skill that touches git has a JS prepare script that pre-computes data and 
 | `/cs:sync` | Synchronize config with current codebase state |
 | `/cs:doctor` | Diagnose `.claude/` configuration health |
 
+### Templates
+
+`/cs:init` uses templates to generate project-specific skills:
+
+| Template | Generated skill | Detects |
+|---|---|---|
+| `CLAUDE.md.template` | `CLAUDE.md` | Decision framework, code standards |
+| `review-prompts/*.template` | `.claude/skills/review/prompts/` | Review dimensions |
+| `git-workflow.md.template` | `.claude/skills/git-workflow/` | Multi-repo, pre-commit hooks, branch conventions |
+
 ## Design
 
 See [design document](docs/plans/2026-03-29-devflow-plugin-design.md) for architecture decisions, skill details, and phased delivery plan.
