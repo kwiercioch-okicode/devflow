@@ -1066,6 +1066,12 @@ body::after {
       <div class="guardrail-desc">Demonstrate it works: tests pass, behavioral diff, or build succeeds. Not done until verified.</div>
     </div>
 
+    <div class="guardrail-card nondeterministic" data-reveal data-delay="600" data-guard="nd-self-learning">
+      <div class="guardrail-badges"><span class="enforcement-badge badge-skill">CLAUDE.md</span><span class="source-badge badge-rules">.claude/rules/</span></div>
+      <div class="guardrail-name">Self-Learning</div>
+      <div class="guardrail-desc">Capture corrections and discoveries to .claude/learnings/log.md. Harvest into skills/rules when 10+ ACTIVE entries accumulate.</div>
+    </div>
+
     <div class="guardrail-card deterministic" data-reveal data-delay="275" data-guard="doctor">
       <div class="guardrail-badges"><span class="enforcement-badge badge-hook">hook</span><span class="source-badge badge-plugin">plugin</span></div>
       <div class="guardrail-name">/df:doctor</div>
@@ -1101,6 +1107,7 @@ body::after {
     <div class="cmd-item" data-reveal data-delay="300" data-cmd="version"><span class="cmd-icon">🏷️</span><div><div class="cmd-name">/df:version</div><div class="cmd-desc">Semver + changelog</div></div></div>
     <div class="cmd-item" data-reveal data-delay="350" data-cmd="ship"><span class="cmd-icon">📦</span><div><div class="cmd-name">/df:ship</div><div class="cmd-desc">End-to-end pipeline</div></div></div>
     <div class="cmd-item" data-reveal data-delay="400" data-cmd="doctor"><span class="cmd-icon">🩺</span><div><div class="cmd-name">/df:doctor</div><div class="cmd-desc">Guardrails health check</div></div></div>
+    <div class="cmd-item" data-reveal data-delay="450" data-cmd="harvest"><span class="cmd-icon">🌾</span><div><div class="cmd-name">/df:harvest</div><div class="cmd-desc">Promote learnings to skills/rules</div></div></div>
     <div class="cmd-item" data-reveal data-delay="500" data-cmd="cs-init" style="border-color: #a78bfa33;"><span class="cmd-icon">🔧</span><div><div class="cmd-name" style="color: var(--purple);">/cs:init</div><div class="cmd-desc">Generate .claude/ config</div></div></div>
     <div class="cmd-item" data-reveal data-delay="550" data-cmd="cs-sync" style="border-color: #a78bfa33;"><span class="cmd-icon">🔄</span><div><div class="cmd-name" style="color: var(--purple);">/cs:sync</div><div class="cmd-desc">Sync config with codebase</div></div></div>
     <div class="cmd-item" data-reveal data-delay="600" data-cmd="cs-doctor" style="border-color: #a78bfa33;"><span class="cmd-icon">🏥</span><div><div class="cmd-name" style="color: var(--purple);">/cs:doctor</div><div class="cmd-desc">Diagnose .claude/ health</div></div></div>
@@ -1226,6 +1233,13 @@ const CMD_DATA = {
     flow: ['Check hooks installed', 'Verify dimensions', 'Test project detection', 'Check verdict files', 'Report'],
     description: 'Deterministic health check (zero LLM involvement). Verifies hooks are installed and scripts exist, discovers review dimensions, checks multi-repo/worktree/OpenSpec detection, validates verdict files, tests gh CLI authentication. 11 checks total.',
     details: { 'Hooks': 'Verifies scripts exist at expected paths', 'Discovery': 'Dimensions, multi-repo, worktree, OpenSpec', 'gh CLI': 'Checks authentication status' }
+  },
+  harvest: {
+    icon: '🌾', title: '/df:harvest', subtitle: 'Promote accumulated learnings into permanent project artifacts',
+    flags: ['(no flags)'],
+    flow: ['Read log.md', 'Count ACTIVE entries', 'Classify by target', 'Confirm plan', 'Promote one by one', 'Mark PROMOTED'],
+    description: 'Reads .claude/learnings/log.md and promotes ACTIVE entries into the right permanent home: skill gotcha sections, .claude/rules/ files, .claude/docs/traps.md, or new skill candidates. Each entry is shown with its proposed change before applying. Never batches - promotes one at a time with y/n/skip per entry.',
+    details: { 'Trigger': 'Run when doctor warns about 10+ ACTIVE entries', 'Promotion targets': 'Skill gotchas, rules, traps.md, new skills', 'Log mutation': 'ACTIVE -> PROMOTED (never deleted)', 'Threshold': '3 entries minimum to start, 10 = doctor warning' }
   },
   'cs-init': {
     icon: '🔧', title: '/cs:init', subtitle: 'Generate .claude/ configuration from codebase analysis',
@@ -1433,6 +1447,13 @@ const GUARD_DATA = {
     flow: ['Detect ambiguous situation', 'Stop autonomous work', 'Surface uncertainty to user', 'Wait for guidance'],
     description: 'The LLM must stop and ask when: requirements are ambiguous with meaningfully different interpretations, fix requires changing public API/schema/shared contract, two different approaches both failed, task scope grew beyond original request, about to delete/overwrite code it doesn\'t understand.',
     details: { 'Must stop': 'Ambiguous requirements, API/schema changes, 2 failed approaches, scope growth, unknown code deletion', 'May proceed': 'Clear reproduction, obvious approach, tests exist, fixing own mistake', 'Risk if skipped': 'Wrong implementation, breaking changes, lost user work' }
+  },
+  'nd-self-learning': {
+    icon: '📚', title: 'Self-Learning', subtitle: 'Non-deterministic - capture corrections and discoveries to learnings log',
+    event: 'CLAUDE.md instruction + /df:harvest',
+    flow: ['Detect correction or discovery', 'Append to .claude/learnings/log.md', 'Doctor warns at 10+ ACTIVE', 'Run /df:harvest', 'Promote to skills/rules/docs', 'Mark PROMOTED'],
+    description: 'After sessions with corrections or surprising discoveries, the LLM captures learnings to .claude/learnings/log.md with status ACTIVE. When the log reaches 10+ ACTIVE entries, doctor warns and /df:harvest guides promotion of each entry to its permanent home: skill gotcha sections, .claude/rules/ files, traps.md, or new skills.',
+    details: { 'Log file': '.claude/learnings/log.md', 'Entry format': 'date, context, learning, action + Status: ACTIVE', 'Harvest trigger': '10+ ACTIVE entries (doctor warns)', 'Promotion targets': 'Skill gotchas, rules, traps.md, new skills', 'After harvest': 'Status changes ACTIVE -> PROMOTED' }
   }
 };
 

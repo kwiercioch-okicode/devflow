@@ -22,6 +22,19 @@ const PRODUCTION_EXTENSIONS = new Set([
 const TEST_PATTERNS = [/test/i, /spec/i, /\.test\./, /\.spec\./, /Test\.php$/, /__tests__/];
 const CONFIG_PATTERNS = [/config/i, /\.env/, /docker/i, /webpack/i, /vite/i, /tsconfig/i, /package\.json/, /\.css$/, /\.scss$/, /\.md$/];
 
+// User-facing file patterns - changes here may need E2E tests
+const USER_FACING_PATTERNS = [
+  /Handler\.php$/,      // PHP command/query handlers
+  /Controller\.php$/,   // PHP controllers
+  /routes?\.(php|ts|tsx|js)$/i,  // route files
+  /\/pages\//,          // Next.js / React pages dir
+  /\/views\//,          // view files
+  /Page\.(tsx|jsx|ts|js)$/, // React page components
+  /Modal\.(tsx|jsx|ts|js)$/, // Modal components
+  /Wizard\.(tsx|jsx|ts|js)$/, // Wizard components
+  /Form\.(tsx|jsx|ts|js)$/,  // Form components
+];
+
 function isProductionFile(filePath) {
   if (!filePath) return false;
   const ext = extname(filePath);
@@ -33,6 +46,10 @@ function isProductionFile(filePath) {
 
 function isTestFile(filePath) {
   return TEST_PATTERNS.some(p => p.test(filePath));
+}
+
+function isUserFacingFile(filePath) {
+  return USER_FACING_PATTERNS.some(p => p.test(filePath));
 }
 
 async function main() {
@@ -59,10 +76,14 @@ async function main() {
     process.exit(0);
   }
 
+  const e2eNote = isUserFacingFile(filePath)
+    ? ' If this is a user-facing change, also add an E2E task to tasks.md (see e2e-coverage rule).'
+    : '';
+
   process.stdout.write(
     'TEST-FIRST REMINDER: Editing production code. ' +
-    'Ensure a failing test exists before writing production code. ' +
-    'Use /df:test-first for the TDD workflow.'
+    'Ensure a failing test exists before writing production code.' +
+    e2eNote
   );
   process.exit(0);
 }

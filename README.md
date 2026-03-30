@@ -38,6 +38,7 @@ Two plugins in one marketplace:
 | `/df:version` | Semantic versioning + changelog |
 | `/df:ship` | Thin orchestrator: commit -> review -> PR |
 | `/df:doctor` | Guardrails health check |
+| `/df:harvest` | Promote learnings from log to skills/rules/docs |
 
 ### Guardrail Hooks
 

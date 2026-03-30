@@ -16,17 +16,24 @@ Append to `.claude/learnings/log.md`:
 ```markdown
 ## YYYY-MM-DD - <brief summary>
 **Status:** ACTIVE
+**Skill:** <skill name | rule:<name> | docs | new>
 **Context:** <what you were doing>
 **Learning:** <what was discovered>
-**Action:** <skill to update, rule to add, or gotcha to document>
+**Action:** <specific change to make in that skill or rule>
 ```
+
+**Skill field values:**
+- Existing skill name: `selected-photos`, `backend-patterns`, `e2e-test-patterns`, etc.
+- Process rule: `rule:test-first`, `rule:fact-check`, etc.
+- Documentation: `docs`
+- New skill needed: `new:<proposed-name>`
 
 ## Harvest Threshold
 
-When log has 10+ ACTIVE entries, promote learnings into:
-- Skill gotchas and patterns
-- New rules in `.claude/rules/`
-- Documentation updates
-- New skills for uncovered domains
+When log has 10+ ACTIVE entries, run `/df:harvest`. It groups entries by Skill and promotes each to the right file:
+- Skill entry -> gotcha or pattern section in that skill's SKILL.md
+- Rule entry -> update or create `.claude/rules/<name>.md`
+- Docs entry -> `.claude/docs/traps.md` or relevant doc file
+- New entry -> new skill candidate (requires confirmation)
 
-Then mark promoted entries as PROMOTED.
+Then marks promoted entries as PROMOTED.
