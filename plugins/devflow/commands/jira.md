@@ -1,6 +1,6 @@
 ---
 description: "Jira integration - fetch ticket for planning, post test cases after OpenSpec proposal, post E2E results with screenshots."
-allowed-tools: [Read, Glob, Grep, Bash, mcp__atlassian__jira_get_issue, mcp__atlassian__jira_add_comment, mcp__atlassian__jira_add_attachment]
+allowed-tools: [Read, Glob, Grep, Bash, mcp__atlassian__getJiraIssue, mcp__atlassian__addCommentToJiraIssue, mcp__atlassian__fetchAtlassian, mcp__atlassian__getAccessibleAtlassianResources]
 ---
 
 # /df:jira
@@ -15,7 +15,7 @@ Jira integration for the devflow workflow. Two operations: fetch ticket data for
 
 Fetch ticket data for use in `/df:plan`.
 
-1. Call Atlassian MCP: `mcp__atlassian__jira_get_issue` with the ticket ID
+1. Call Atlassian MCP: `mcp__atlassian__getJiraIssue` with the ticket ID
 2. Extract and return structured data:
    ```
    Title: <summary>
@@ -40,7 +40,7 @@ Post OpenSpec scenarios as test cases in a Jira comment.
 3. If no scenarios found: report and stop
 4. Load template from `plugins/devflow/templates/jira/test-cases.md` (or project override at `.claude/jira-templates/test-cases.md`)
 5. Format comment using the template
-6. Post via Atlassian MCP: `mcp__atlassian__jira_add_comment`
+6. Post via Atlassian MCP: `mcp__atlassian__addCommentToJiraIssue`
 7. Report: "Przypadki testowe dodane do <TICKET-ID> (N scenariuszy)"
 
 ---
@@ -56,11 +56,16 @@ Run Playwright tests and post results + screenshots to Jira as visual proof.
    npx playwright test <spec-file> \
      --reporter=json \
      --screenshot=on \
-     --output=test-results/
+     --output=test-results/ \
+     2>&1 | tee /tmp/pw-output.txt; \
+   cat /tmp/pw-output.txt | node -e "
+     const lines = require('fs').readFileSync('/dev/stdin','utf8');
+     const json = lines.match(/\{[\s\S]*\}/);
+     if (json) require('fs').writeFileSync('/tmp/pw-results.json', json[0]);
+   "
    ```
-   Save JSON output to a temp file.
 
-2. Parse JSON report - for each test extract:
+2. Parse `/tmp/pw-results.json` - for each test extract:
    - Test title (should match OpenSpec scenario name)
    - Status: passed / failed / skipped
    - Duration
@@ -81,11 +86,23 @@ Run Playwright tests and post results + screenshots to Jira as visual proof.
    _Playwright | df:jira post-test-results_
    ```
 
-4. Post comment via `mcp__atlassian__jira_add_comment`
+4. Post comment via `mcp__atlassian__addCommentToJiraIssue`
 
-5. Attach screenshots via `mcp__atlassian__jira_add_attachment` - one per test, named `<scenario-name>.png`
+5. Attach screenshots via Jira REST API (Atlassian MCP has no attachment tool):
+   ```bash
+   # Get base URL from MCP first (mcp__atlassian__getAccessibleAtlassianResources)
+   # Then for each screenshot:
+   curl -s -X POST \
+     "$JIRA_URL/rest/api/3/issue/<TICKET-ID>/attachments" \
+     -H "X-Atlassian-Token: no-check" \
+     -H "Authorization: Basic $(echo -n "$JIRA_EMAIL:$JIRA_API_TOKEN" | base64)" \
+     -F "file=@<screenshot-path>;type=image/png"
+   ```
+   Env vars required: `JIRA_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN`.
+   If env vars missing: skip attachments, report screenshots path locally and note they need manual upload.
 
-6. Report: "Wyniki dodane do <TICKET-ID> (N/M PASS, M screenhotow zalaczonych)"
+6. Report: "Wyniki dodane do <TICKET-ID> (N/M PASS, M screenshotow zalaczonych)"
+   If attachments skipped: "Screenshoty zapisane w test-results/ - wymagaja recznego uploadu (brak JIRA_URL/JIRA_EMAIL/JIRA_API_TOKEN)"
 
 ---
 
