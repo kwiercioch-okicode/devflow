@@ -1155,7 +1155,7 @@ body::after {
     <div class="cmd-item" data-reveal data-delay="300" data-cmd="version"><span class="cmd-icon">🏷️</span><div><div class="cmd-name">/df:version</div><div class="cmd-desc">Semver + changelog</div></div></div>
     <div class="cmd-item" data-reveal data-delay="350" data-cmd="ship"><span class="cmd-icon">📦</span><div><div class="cmd-name">/df:ship</div><div class="cmd-desc">End-to-end pipeline</div></div></div>
     <div class="cmd-item" data-reveal data-delay="400" data-cmd="doctor"><span class="cmd-icon">🩺</span><div><div class="cmd-name">/df:doctor</div><div class="cmd-desc">Guardrails health check</div></div></div>
-    <div class="cmd-item" data-reveal data-delay="450" data-cmd="jira"><span class="cmd-icon">🎫</span><div><div class="cmd-name">/df:jira</div><div class="cmd-desc">Jira fetch + post test cases</div></div></div>
+    <div class="cmd-item" data-reveal data-delay="450" data-cmd="jira"><span class="cmd-icon">🎫</span><div><div class="cmd-name">/df:jira</div><div class="cmd-desc">Fetch ticket, post test cases + E2E proof</div></div></div>
     <div class="cmd-item" data-reveal data-delay="500" data-cmd="cs-init" style="border-color: #a78bfa33;"><span class="cmd-icon">🔧</span><div><div class="cmd-name" style="color: var(--purple);">/cs:init</div><div class="cmd-desc">Generate .claude/ config</div></div></div>
     <div class="cmd-item" data-reveal data-delay="550" data-cmd="cs-sync" style="border-color: #a78bfa33;"><span class="cmd-icon">🔄</span><div><div class="cmd-name" style="color: var(--purple);">/cs:sync</div><div class="cmd-desc">Sync config with codebase</div></div></div>
     <div class="cmd-item" data-reveal data-delay="600" data-cmd="cs-harvest" style="border-color: #a78bfa33;"><span class="cmd-icon">🌾</span><div><div class="cmd-name" style="color: var(--purple);">/cs:harvest</div><div class="cmd-desc">Promote learnings to skills/rules</div></div></div>
@@ -1284,11 +1284,11 @@ const CMD_DATA = {
     details: { 'Hooks': 'Verifies scripts exist at expected paths', 'Discovery': 'Dimensions, multi-repo, worktree, OpenSpec', 'gh CLI': 'Checks authentication status' }
   },
   jira: {
-    icon: '🎫', title: '/df:jira', subtitle: 'Jira integration - fetch ticket for planning, post test cases after OpenSpec',
-    flags: ['fetch <TICKET-ID>', 'post-test-cases <TICKET-ID> <change-id>'],
-    flow: ['Fetch: Atlassian MCP -> ticket data -> plan context', 'Post: spec.md scenarios -> format -> add_comment'],
-    description: 'Two operations: fetch loads ticket title, description, and acceptance criteria via Atlassian MCP for use in /df:plan. Post-test-cases extracts all Scenario: entries from OpenSpec spec.md and posts them as a structured Jira comment using Polish templates. Project can override templates in .claude/jira-templates/.',
-    details: { 'Fetch MCP tool': 'mcp__atlassian__jira_get_issue', 'Post MCP tool': 'mcp__atlassian__jira_add_comment', 'Templates': 'plugins/devflow/templates/jira/ (Bug, Story, Task, Epic, test-cases)', 'Override': '.claude/jira-templates/<Type>.md', 'Language': 'Polish (PL)' }
+    icon: '🎫', title: '/df:jira', subtitle: 'Fetch ticket for planning, post test cases + Playwright E2E proof',
+    flags: ['fetch <TICKET-ID>', 'post-test-cases <TICKET-ID> <change-id>', 'post-test-results <TICKET-ID> <spec-file>'],
+    flow: ['fetch: jira_get_issue -> structured ticket data -> /df:plan context', 'post-test-cases: spec.md scenarios -> Polish template -> add_comment', 'post-test-results: playwright --screenshot=on -> results table -> add_comment + add_attachment'],
+    description: 'Three operations: fetch loads ticket title, description, and acceptance criteria via Atlassian MCP for /df:plan. Post-test-cases extracts Scenario: entries from OpenSpec spec.md and posts them as a structured Jira comment. Post-test-results runs Playwright tests with screenshots always enabled, posts a results table (PASS/FAIL per scenario) and attaches screenshots as visual proof - product owners see how the UI looks without running tests locally.',
+    details: { 'Fetch MCP': 'mcp__atlassian__jira_get_issue', 'Comment MCP': 'mcp__atlassian__jira_add_comment', 'Attachment MCP': 'mcp__atlassian__jira_add_attachment', 'Templates': 'plugins/devflow/templates/jira/ (Bug, Story, Task, Epic, test-cases)', 'Override': '.claude/jira-templates/<Type>.md', 'Language': 'Polish (PL)', 'Screenshots': 'Always on - visual proof of UI state' }
   },
   'cs-harvest': {
     icon: '🌾', title: '/cs:harvest', subtitle: 'Promote accumulated learnings into permanent project artifacts',

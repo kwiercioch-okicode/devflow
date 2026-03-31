@@ -1,6 +1,6 @@
 ---
-description: "Jira integration - fetch ticket for planning, post test cases after OpenSpec proposal."
-allowed-tools: [Read, Glob, Grep, Bash, mcp__atlassian__jira_get_issue, mcp__atlassian__jira_add_comment]
+description: "Jira integration - fetch ticket for planning, post test cases after OpenSpec proposal, post E2E results with screenshots."
+allowed-tools: [Read, Glob, Grep, Bash, mcp__atlassian__jira_get_issue, mcp__atlassian__jira_add_comment, mcp__atlassian__jira_add_attachment]
 ---
 
 # /df:jira
@@ -45,15 +45,61 @@ Post OpenSpec scenarios as test cases in a Jira comment.
 
 ---
 
+---
+
+### post-test-results <TICKET-ID> <spec-file>
+
+Run Playwright tests and post results + screenshots to Jira as visual proof.
+
+1. Run tests with screenshots always enabled:
+   ```bash
+   npx playwright test <spec-file> \
+     --reporter=json \
+     --screenshot=on \
+     --output=test-results/
+   ```
+   Save JSON output to a temp file.
+
+2. Parse JSON report - for each test extract:
+   - Test title (should match OpenSpec scenario name)
+   - Status: passed / failed / skipped
+   - Duration
+   - Screenshot path (from `attachments` array where `name === "screenshot"`)
+
+3. Build results table for Jira comment:
+   ```
+   h2. Wyniki testow E2E
+
+   *Uruchomiono:* YYYY-MM-DD HH:MM
+   *Wynik:* N/M PASS | spec-file
+
+   ||Scenariusz||Status||Czas||
+   |Uzytkownik z folderem widzi oplate|{color:green}PASS{color}|1.2s|
+   |Uzytkownik bez folderu - cena sesji|{color:green}PASS{color}|0.9s|
+   |Gosc bez pakietu nie moze pobrac|{color:red}FAIL{color}|0.4s|
+
+   _Playwright | df:jira post-test-results_
+   ```
+
+4. Post comment via `mcp__atlassian__jira_add_comment`
+
+5. Attach screenshots via `mcp__atlassian__jira_add_attachment` - one per test, named `<scenario-name>.png`
+
+6. Report: "Wyniki dodane do <TICKET-ID> (N/M PASS, M screenhotow zalaczonych)"
+
+---
+
 ## Arguments
 
 | Argument | Description |
 |---|---|
 | `fetch <TICKET-ID>` | Fetch ticket for planning (e.g. `fetch FO-512`) |
 | `post-test-cases <TICKET-ID> <change-id>` | Post scenarios as test cases (e.g. `post-test-cases FO-512 add-feature`) |
+| `post-test-results <TICKET-ID> <spec-file>` | Run E2E + post results + screenshots (e.g. `post-test-results FO-512 e2e-tests/fo-512.spec.ts`) |
 
 ## DO NOT
 
 - Post test cases if spec.md has no `#### Scenario:` entries
 - Fail silently if MCP is unavailable - report and suggest fallback
 - Overwrite existing test case comments - always add a new comment
+- Skip screenshots even when all tests pass - visual proof is the point
