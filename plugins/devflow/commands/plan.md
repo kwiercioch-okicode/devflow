@@ -85,6 +85,8 @@ Group 4 ────┘
 - Test tasks BEFORE implementation tasks in each group
 - Dependency graph must be explicit - what runs parallel vs sequential
 - If multi-repo, mark which repo each task targets
+- **Max 2-3 files per group.** If a group would touch 4+ files, split it. One file + its test = ideal group size.
+- **Tag complexity** on each group: `[sonnet]` (default - pattern-based, CRUD, simple test) or `[opus]` (architecture, complex refactor, cross-cutting). df:execute uses this for model selection.
 
 ## Step 3 - Present and Confirm
 

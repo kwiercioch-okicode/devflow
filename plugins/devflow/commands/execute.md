@@ -54,12 +54,23 @@ For each wave, sequentially:
 
 ### 2a - Dispatch
 
-For each group in the wave, spawn an Agent with:
-- The group's task list
-- Context from completed waves (files added/modified, decisions made)
-- Instruction to complete all tasks in the group
+For each group in the wave, spawn one or more Agents:
 
-**Dispatch ALL groups in a wave in parallel** using a single message with multiple Agent tool calls.
+**Task splitting rules:**
+- Max 2-3 files per agent. If a group has 4+ files, split into separate agents.
+- One file + its test = ideal agent scope.
+- Config/infrastructure changes can be a separate agent from business logic.
+
+**Model selection:**
+- `model: "sonnet"` (default) - for: adding handlers/components by pattern, writing tests, config changes, simple CRUD
+- `model: "opus"` - only for: architecture decisions, complex refactors, cross-cutting logic, design patterns
+
+Each agent receives:
+- Its task subset (not the whole group if split)
+- Context from completed waves (files added/modified, decisions made)
+- Reference file paths to read (not the content - let the agent read what it needs)
+
+**Dispatch ALL agents in a wave in parallel** using a single message with multiple Agent tool calls.
 
 ### 2b - Verify
 
