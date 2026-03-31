@@ -49,6 +49,25 @@ The script reads `.dev-env.yml` from the project root. If missing, tell user:
 >   - path: ./frontend
 > ```
 
+## Context Refresh After Create/Remove
+
+After a successful `create`, inject this message into the conversation so the LLM updates its working context immediately (without waiting for next session start):
+
+```
+WORKTREE ACTIVE: <branch-name>
+Edit files in .worktrees/<branch-name>/, not on main/master.
+All repos: <list repos from .dev-env.yml or detected repos>
+```
+
+After a successful `remove`, inject:
+
+```
+WORKTREE CLOSED: <branch-name>
+Worktree removed. Back to working on main branch.
+```
+
+This mirrors what session-guard.js injects at SessionStart - the LLM gets updated context mid-session without needing a restart.
+
 ## Multi-repo Awareness
 
 The script automatically handles multiple repos listed in `.dev-env.yml`. When creating a worktree, it creates one in each repo that has the branch. When removing, it cleans up all repos.
