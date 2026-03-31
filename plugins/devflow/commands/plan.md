@@ -34,7 +34,7 @@ Read `$PLAN_DATA` JSON. Based on `sourceType`:
 | `conversation` | Use the current conversation context - user already described what to build |
 | `text` | Use `source.text` as requirements |
 | `file` | Use `source.content` as requirements (plan file, spec, etc.) |
-| `ticket` | Fetch ticket via Atlassian MCP (preferred) or `jira` CLI fallback. Use title, description, and acceptance criteria as requirements |
+| `ticket` | Invoke `skill: "df:jira", args: "fetch <TICKET-ID>"` to get title, description, and acceptance criteria |
 | `url` | Fetch URL content. Use as requirements |
 
 If `source.sourceError` is set, show it and stop.
