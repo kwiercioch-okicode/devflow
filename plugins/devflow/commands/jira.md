@@ -51,7 +51,18 @@ Post OpenSpec scenarios as test cases in a Jira comment.
 
 Run Playwright tests and post results + screenshots to Jira as visual proof.
 
-1. Run tests with screenshots always enabled:
+**Before running:** Check if tests have explicit `page.screenshot()` calls at key steps.
+`--screenshot=on` only captures the final test state - if multiple tests end on the same screen,
+all screenshots look identical and provide no useful visual proof.
+Tests should capture key moments explicitly:
+```ts
+await page.screenshot({ path: 'test-results/step-pricing-settings.png' });
+// interact...
+await page.screenshot({ path: 'test-results/step-modal-open.png' });
+```
+If tests lack explicit screenshots, warn: "Screenshoty moga byc nierozroznialne - dodaj page.screenshot() przy kluczowych krokach."
+
+1. Run tests:
    ```bash
    npx playwright test <spec-file> \
      --reporter=json \
@@ -65,7 +76,8 @@ Run Playwright tests and post results + screenshots to Jira as visual proof.
    - Test title (should match OpenSpec scenario name)
    - Status: passed / failed / skipped
    - Duration
-   - Screenshot path (from `attachments` array where `name === "screenshot"`)
+   - Screenshot paths: explicit screenshots saved via `page.screenshot()` take priority over
+     auto-captured end-of-test screenshots (from `attachments` array where `name === "screenshot"`)
 
 3. Build results table for Jira comment:
    ```
