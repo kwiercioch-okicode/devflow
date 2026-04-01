@@ -12,11 +12,12 @@
 
 const PROTECTED_BRANCHES = ['main', 'master', 'staging'];
 
-// Patterns that indicate a commit or push
+// Patterns that indicate a commit or push on a protected branch
+// NOTE: git merge is intentionally NOT blocked - merging feature branches
+// into staging/main is a normal workflow operation
 const DANGEROUS_PATTERNS = [
   /\bgit\s+commit\b/,
   /\bgit\s+push\b/,
-  /\bgit\s+merge\b/,
 ];
 
 async function main() {
