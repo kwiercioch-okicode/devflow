@@ -1,6 +1,6 @@
 ---
 description: "Execute an implementation plan with wave-based parallel dispatch and verification."
-allowed-tools: [Read, Write, Edit, Glob, Grep, Bash, Agent, TaskCreate, TaskUpdate, TaskGet, TaskList]
+allowed-tools: [Read, Write, Edit, Glob, Grep, Bash, Agent, TaskCreate, TaskUpdate, TaskGet, TaskList, LSP]
 ---
 
 # /df:execute
@@ -101,6 +101,7 @@ Each agent receives:
 - Its task subset (not the whole group if split)
 - Context from completed waves (files added/modified, decisions made)
 - Reference file paths to read (not the content - let the agent read what it needs)
+- Instruction: **Use LSP first** for code navigation (goToDefinition for interfaces/types, findReferences for callers, hover for type info). Fall back to Grep only for string literals, comments, config values.
 
 **Before dispatching:** `TaskUpdate` each task in this wave to `in_progress`.
 

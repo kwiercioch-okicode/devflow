@@ -1,6 +1,6 @@
 ---
 description: "Multi-dimension code review with prepare scripts and parallel dimension agents."
-allowed-tools: [Read, Write, Edit, Glob, Grep, Bash, Agent]
+allowed-tools: [Read, Write, Edit, Glob, Grep, Bash, Agent, LSP]
 ---
 
 # /df:review
