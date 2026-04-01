@@ -53,14 +53,35 @@ async function main() {
   }
 
   if (PROTECTED_BRANCHES.includes(branch)) {
-    // Check if it's a push to a specific branch (might be pushing from a feature branch)
+    // Allow push to a non-protected branch (e.g., pushing feature branch from main checkout)
     const pushToOtherBranch = /\bgit\s+push\s+\S+\s+(?!main|master|staging)\S+/.test(command);
     if (pushToOtherBranch) {
       process.exit(0);
     }
 
+    // Allow commit + push after a merge (MERGE_HEAD exists = merge in progress)
+    // This is normal workflow: checkout staging → merge feature → commit → push
+    const fs = require('node:fs');
+    const path = require('node:path');
+    try {
+      const gitDir = execSync('git rev-parse --git-dir', { encoding: 'utf8' }).trim();
+      if (fs.existsSync(path.join(gitDir, 'MERGE_HEAD'))) {
+        process.exit(0);
+      }
+    } catch {
+      // Can't check - fall through to block
+    }
+
+    // Allow git push origin staging/main (pushing merge result)
+    // Only block direct commits (new work on protected branch)
+    const isPush = /\bgit\s+push\b/.test(command);
+    const isCommitNoEdit = /\bgit\s+commit\s+--no-edit\b/.test(command);
+    if (isPush || isCommitNoEdit) {
+      process.exit(0);
+    }
+
     process.stdout.write(
-      `BLOCKED: Cannot ${command.includes('push') ? 'push' : 'commit'} on protected branch '${branch}'. ` +
+      `BLOCKED: Cannot commit directly on protected branch '${branch}'. ` +
       `Create a worktree first: /df:worktree create <branch-name>`
     );
     process.exit(2);
