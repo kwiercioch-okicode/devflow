@@ -1,6 +1,6 @@
 ---
 description: "Generate structured implementation plan from any input - text, ticket URL, OpenSpec change, or file."
-allowed-tools: [Read, Write, Edit, Glob, Grep, Bash, Agent]
+allowed-tools: [Read, Write, Edit, Glob, Grep, Bash, Agent, LSP]
 ---
 
 # /df:plan
@@ -44,9 +44,9 @@ If `project.openspecChange` is set, load the OpenSpec specs as additional contex
 ## Step 2 - Analyze and Plan
 
 Explore the codebase to understand:
-- Relevant files and modules
-- Existing patterns and conventions
-- Testing approach used
+- Relevant files and modules (use **LSP goToDefinition/findReferences** for symbols, Grep for strings/config)
+- Existing patterns and conventions (read 1-2 examples of similar code)
+- Testing approach used (find existing test files for the same module)
 
 Then generate a structured plan:
 
@@ -59,17 +59,19 @@ Then generate a structured plan:
 
 ## Tasks
 
-### Group 1: <name>
+### Group 1: <name> [sonnet]
 Depends on: none
 
-- [ ] 1.1 <specific task with clear deliverable>
-- [ ] 1.2 <specific task>
+- [ ] 1.1 Write test: <failing test for expected behavior>
+- [ ] 1.2 Implement: <specific task with clear deliverable> (`path/to/file.ts`)
+- [ ] 1.3 Verify tests pass
 
-### Group 2: <name>
+### Group 2: <name> [opus]
 Depends on: Group 1
 
-- [ ] 2.1 <specific task>
-- [ ] 2.2 <specific task>
+- [ ] 2.1 Write test: <failing test>
+- [ ] 2.2 Implement: <specific task> (`path/to/file.ts`)
+- [ ] 2.3 Verify tests pass
 
 ## Dependency Graph
 
