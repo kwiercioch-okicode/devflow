@@ -133,10 +133,35 @@ Do transition: curl -s -X POST -H "Content-Type: application/json" -H "Authoriza
   const prompt = phase === 'plan'
     ? `Fetch Jira ticket ${issueKey}, analyze the codebase, generate an implementation plan.
 
-The plan MUST include an "Environment" section with:
-- Branch name: ${ticketLower}-<short-description> (from staging)
-- Which repos need worktrees (api-fotigo, fotigo, or both)
-- Worktree paths: .worktrees/${ticketLower}-<short-description>
+Use this exact template for the plan (find it at plugins/devflow/templates/jira/plan-comment.md or use this structure):
+
+# Plan implementacji | ${issueKey}
+
+## Diagnoza
+<co jest nie tak / co trzeba zrobic>
+
+## OpenSpec
+Rekomendacja: TAK / NIE
+Powod: <nowa capability / behavioral change = TAK, bugfix / config = NIE>
+
+## Environment
+- Branch: ${ticketLower}-<short-description> (z staging)
+- Repos: fotigo / api-fotigo / oba
+- Worktree: <repo>/.worktrees/${ticketLower}-<short-description>
+
+## Taski
+### Group 1: <nazwa> [sonnet]
+Depends on: none
+- [ ] 1.1 Write test: <co testujemy>
+- [ ] 1.2 Implement: <co zmieniamy> (plik:linia)
+- [ ] 1.3 Verify: <komenda>
+
+## E2E Test Plan
+- [ ] <scenariusz 1 - happy path>
+- [ ] <scenariusz 2 - edge case>
+
+## Ryzyka
+<niskie/srednie/wysokie - dlaczego>
 
 This is a multi-repo project: api-fotigo (PHP backend) + fotigo (React frontend). Always branch from staging.
 
