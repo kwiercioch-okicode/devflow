@@ -119,10 +119,15 @@ function spawnClaude(issueKey, phase) {
     return false;
   }
 
-  const prompt = `/df:ship ${issueKey} --phase ${phase} --auto`;
-  log('INFO', `Spawning claude`, { issueKey, phase, prompt, cwd: PROJECT_CWD });
+  const prompt = phase === 'plan'
+    ? `Fetch Jira ticket ${issueKey}, analyze the codebase, generate an implementation plan, post it as a Jira comment, and transition the ticket to "Plan do akceptacji". Use the df:jira, df:plan skills. Work autonomously, no confirmations needed.`
+    : `Implement the plan for Jira ticket ${issueKey}. Create a worktree, execute the plan, then ship (commit, review, PR). Post the PR link to Jira and transition to "PR gotowy". If review fails after 2 auto-fix attempts, transition to "Wymaga uwagi". Use df:worktree, df:execute, df:ship, df:jira skills. Work autonomously.`;
+  log('INFO', `Spawning claude`, { issueKey, phase, prompt: prompt.slice(0, 80) + '...', cwd: PROJECT_CWD });
 
-  const child = spawn(CLAUDE_BIN, ['-p', prompt], {
+  const child = spawn(CLAUDE_BIN, [
+    '-p', prompt,
+    '--allowedTools', 'Read,Write,Edit,Glob,Grep,Bash,Agent,Skill,LSP,mcp__atlassian__getJiraIssue,mcp__atlassian__addCommentToJiraIssue',
+  ], {
     cwd: PROJECT_CWD,
     stdio: ['ignore', 'pipe', 'pipe'],
     env: { ...process.env },
