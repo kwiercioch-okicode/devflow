@@ -119,9 +119,23 @@ function spawnClaude(issueKey, phase) {
     return false;
   }
 
+  const ticketLower = issueKey.toLowerCase().replace('-', '-');
   const prompt = phase === 'plan'
-    ? `Fetch Jira ticket ${issueKey}, analyze the codebase, generate an implementation plan, post it as a Jira comment, and transition the ticket to "Plan do akceptacji". Use the df:jira, df:plan skills. Work autonomously, no confirmations needed.`
-    : `Implement the plan for Jira ticket ${issueKey}. Create a worktree, execute the plan, then ship (commit, review, PR). Post the PR link to Jira and transition to "PR gotowy". If review fails after 2 auto-fix attempts, transition to "Wymaga uwagi". Use df:worktree, df:execute, df:ship, df:jira skills. Work autonomously.`;
+    ? `Fetch Jira ticket ${issueKey}, analyze the codebase, generate an implementation plan.
+
+The plan MUST include an "Environment" section with:
+- Branch name: ${ticketLower}-<short-description> (from staging)
+- Which repos need worktrees (api-fotigo, fotigo, or both)
+- Worktree paths: .worktrees/${ticketLower}-<short-description>
+
+This is a multi-repo project: api-fotigo (PHP backend) + fotigo (React frontend). Always branch from staging.
+
+Save the plan to .devflow/plan-${ticketLower}.md, post it as a Jira comment on ${issueKey}, and transition the ticket to "Plan do akceptacji". Work autonomously, no confirmations needed.`
+    : `Implement the plan for Jira ticket ${issueKey}. Read the plan from .devflow/plan-${ticketLower}.md.
+
+Create worktree(s) from staging branch as specified in the plan. Execute the plan, then ship (commit, review with auto-fix up to 2 attempts, PR). Post the PR link to Jira and transition to "PR gotowy". If review fails after 2 auto-fix attempts, post the issue list and transition to "Wymaga uwagi".
+
+This is a multi-repo project: api-fotigo (PHP backend) + fotigo (React frontend). Work autonomously.`;
   log('INFO', `Spawning claude`, { issueKey, phase, prompt: prompt.slice(0, 80) + '...', cwd: PROJECT_CWD });
 
   const child = spawn(CLAUDE_BIN, [
