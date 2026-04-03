@@ -36,7 +36,7 @@
 'use strict';
 
 const http = require('node:http');
-const { spawn } = require('node:child_process');
+const { spawn, execSync: exec } = require('node:child_process');
 const { join } = require('node:path');
 const { mkdirSync, appendFileSync } = require('node:fs');
 
@@ -177,6 +177,7 @@ ${jiraInstructions}`;
 
   const child = spawn(CLAUDE_BIN, [
     '-p', prompt,
+    '--output-format', 'json',
     '--allowedTools', 'Read,Write,Edit,Glob,Grep,Bash,Agent,Skill,LSP',
   ], {
     cwd: PROJECT_CWD,
@@ -194,11 +195,56 @@ ${jiraInstructions}`;
 
   child.on('close', (code) => {
     activeJobs.delete(issueKey);
+
+    // Extract session ID from JSON output
+    let sessionId = null;
+    try {
+      const json = JSON.parse(stdout);
+      sessionId = json.session_id || null;
+    } catch { /* not JSON or no session_id */ }
+
     log(code === 0 ? 'INFO' : 'ERROR', `Claude exited`, {
-      issueKey, phase, code,
+      issueKey, phase, code, sessionId,
       stdout: stdout.slice(-500),
       stderr: stderr.slice(-500),
     });
+
+    // Post session ID to Jira as comment (for interactive resume)
+    if (sessionId && process.env.JIRA_URL && process.env.JIRA_EMAIL && process.env.JIRA_API_TOKEN) {
+      const phaseLabel = phase === 'plan' ? 'Planowanie' : 'Implementacja';
+      const statusEmoji = code === 0 ? 'ok' : 'blad';
+      const resumeCmd = `claude --resume ${sessionId}`;
+      const commentText = `${phaseLabel} zakonczone (${statusEmoji}). Session: ${resumeCmd}`;
+
+      const auth = Buffer.from(`${process.env.JIRA_EMAIL}:${process.env.JIRA_API_TOKEN}`).toString('base64');
+      const body = JSON.stringify({
+        body: { type: 'doc', version: 1, content: [
+          { type: 'paragraph', content: [{ type: 'text', text: commentText }] }
+        ]}
+      });
+
+      const url = new URL(`/rest/api/3/issue/${issueKey}/comment`, process.env.JIRA_URL);
+      const options = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${auth}` },
+      };
+
+      const req = require('node:https').request(url, options, (res) => {
+        log('INFO', `Session comment posted to ${issueKey}`, { sessionId, status: res.statusCode });
+      });
+      req.on('error', (err) => {
+        log('WARN', `Failed to post session comment`, { issueKey, error: err.message });
+      });
+      req.write(body);
+      req.end();
+    }
+
+    // macOS notification
+    if (process.platform === 'darwin') {
+      const title = code === 0 ? `${issueKey}: ${phase} done` : `${issueKey}: ${phase} failed`;
+      const msg = sessionId ? `claude --resume ${sessionId}` : 'Check Jira for details';
+      exec(`osascript -e 'display notification "${msg}" with title "${title}"'`, { cwd: PROJECT_CWD });
+    }
   });
 
   child.on('error', (err) => {
