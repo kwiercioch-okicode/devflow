@@ -36,9 +36,39 @@ Two plugins in one marketplace:
 | `/df:review` | Multi-dimension code review with prepare scripts |
 | `/df:pr` | Auto-generated PR description |
 | `/df:version` | Semantic versioning + changelog |
-| `/df:ship` | Thin orchestrator: commit -> review -> PR |
+| `/df:ship` | Full SDLC pipeline: plan -> execute -> commit -> review -> PR. With ticket ID: Jira-driven automation |
 | `/df:doctor` | Guardrails health check |
-| `/df:jira` | Fetch Jira ticket for planning, post test cases after OpenSpec |
+| `/df:jira` | Jira integration: fetch ticket, post plans/results, transition statuses |
+
+### Jira-driven SDLC Pipeline
+
+`/df:ship` supports fully autonomous, Jira-driven development:
+
+```
+Jira ticket (Backlog)
+    |-- move to "Do realizacji" --> webhook fires
+    |
+    v
+Claude: fetch ticket -> analyze -> plan -> post to Jira
+    |
+    v
+Jira: "Plan do akceptacji" (human reviews plan)
+    |-- move to "Zaakceptowany" --> webhook fires
+    |
+    v
+Claude: worktree -> execute -> commit -> review -> PR -> post to Jira
+    |
+    v
+Jira: "PR gotowy" (human merges)
+```
+
+**Components:**
+- `jira-relay.js` - HTTP server receiving Jira webhooks, spawns `claude -p`
+- Cloudflare Tunnel - exposes local relay to Jira Cloud
+- Jira Automation - 2 rules sending webhooks on status transitions
+- Plan template - structured comment with diagnosis, environment, tasks, E2E test plan
+
+**Usage:** `jira-relay-start` (shell alias) starts tunnel + relay. Create ticket in Jira CA project, move to "Do realizacji".
 
 ### Guardrail Hooks
 

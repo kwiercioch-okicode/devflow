@@ -910,7 +910,7 @@ body::after {
 <!-- Ship Pipeline -->
 <section class="section">
   <h2 class="section-title">Ship Pipeline</h2>
-  <p class="section-subtitle">End-to-end flow from plan to pull request — /df:ship orchestrates the chain</p>
+  <p class="section-subtitle">Full SDLC pipeline from Jira ticket to pull request - /df:ship orchestrates the chain</p>
 
   <div class="pipeline" id="pipeline">
     <div class="pipeline-step" data-reveal>
@@ -1153,9 +1153,9 @@ body::after {
     <div class="cmd-item" data-reveal data-delay="200" data-cmd="review"><span class="cmd-icon">🔍</span><div><div class="cmd-name">/df:review</div><div class="cmd-desc">Multi-dimension code review</div></div></div>
     <div class="cmd-item" data-reveal data-delay="250" data-cmd="pr"><span class="cmd-icon">🚀</span><div><div class="cmd-name">/df:pr</div><div class="cmd-desc">Auto PR description</div></div></div>
     <div class="cmd-item" data-reveal data-delay="300" data-cmd="version"><span class="cmd-icon">🏷️</span><div><div class="cmd-name">/df:version</div><div class="cmd-desc">Semver + changelog</div></div></div>
-    <div class="cmd-item" data-reveal data-delay="350" data-cmd="ship"><span class="cmd-icon">📦</span><div><div class="cmd-name">/df:ship</div><div class="cmd-desc">End-to-end pipeline</div></div></div>
+    <div class="cmd-item" data-reveal data-delay="350" data-cmd="ship"><span class="cmd-icon">📦</span><div><div class="cmd-name">/df:ship</div><div class="cmd-desc">Full SDLC pipeline + Jira automation</div></div></div>
     <div class="cmd-item" data-reveal data-delay="400" data-cmd="doctor"><span class="cmd-icon">🩺</span><div><div class="cmd-name">/df:doctor</div><div class="cmd-desc">Guardrails health check</div></div></div>
-    <div class="cmd-item" data-reveal data-delay="450" data-cmd="jira"><span class="cmd-icon">🎫</span><div><div class="cmd-name">/df:jira</div><div class="cmd-desc">Fetch ticket, post test cases + E2E proof</div></div></div>
+    <div class="cmd-item" data-reveal data-delay="450" data-cmd="jira"><span class="cmd-icon">🎫</span><div><div class="cmd-name">/df:jira</div><div class="cmd-desc">Jira lifecycle: fetch, plan, results, transitions</div></div></div>
     <div class="cmd-item" data-reveal data-delay="500" data-cmd="cs-init" style="border-color: #a78bfa33;"><span class="cmd-icon">🔧</span><div><div class="cmd-name" style="color: var(--purple);">/cs:init</div><div class="cmd-desc">Generate .claude/ config</div></div></div>
     <div class="cmd-item" data-reveal data-delay="550" data-cmd="cs-sync" style="border-color: #a78bfa33;"><span class="cmd-icon">🔄</span><div><div class="cmd-name" style="color: var(--purple);">/cs:sync</div><div class="cmd-desc">Sync config with codebase</div></div></div>
     <div class="cmd-item" data-reveal data-delay="600" data-cmd="cs-harvest" style="border-color: #a78bfa33;"><span class="cmd-icon">🌾</span><div><div class="cmd-name" style="color: var(--purple);">/cs:harvest</div><div class="cmd-desc">Promote learnings to skills/rules</div></div></div>
@@ -1268,12 +1268,12 @@ const CMD_DATA = {
     details: { 'Version sources': 'Git tags, package.json', 'Auto-detect': 'Conventional commits analysis', 'Multi-repo': 'Tags each repo with same version' }
   },
   ship: {
-    icon: '📦', title: '/df:ship', subtitle: 'End-to-end pipeline: commit, review, PR',
+    icon: '📦', title: '/df:ship', subtitle: 'Full SDLC pipeline: plan -> execute -> ship. Jira-driven with ticket ID.',
     script: 'ship-prepare.js',
-    flags: ['--skip commit,review,pr', '--auto', '--dry-run', '--draft'],
-    flow: ['Compute pipeline steps', 'Display plan', 'Confirm', '/df:commit', '/df:review', 'Check verdict', '/df:pr'],
-    description: 'Thin orchestrator (~90 lines) that chains sub-commands sequentially. Ship-prepare.js determines which steps run based on context (uncommitted files, skip flags, gh auth). Review verdict gate between review and PR - stops pipeline on critical/high findings.',
-    details: { 'Steps': 'commit -> review -> verdict check -> pr', 'Verdict gate': 'Reads .devflow/review-verdict.json', 'No config file': 'YAGNI - --skip flags suffice' }
+    flags: ['FO-512 (ticket mode)', '--phase plan|impl', '--skip plan,execute', '--auto', '--dry-run', '--draft'],
+    flow: ['Default: plan -> execute -> commit -> review -> PR', 'Ticket: jira fetch -> plan -> [checkpoint] -> worktree -> execute -> commit -> review -> PR -> jira update', 'Webhook: jira-relay.js receives Jira webhook -> spawns claude -p with --phase'],
+    description: 'Full SDLC orchestrator. Without ticket: plan -> execute -> commit -> review -> PR. With ticket ID (e.g. CA-512): adds Jira fetch, plan posting, worktree creation, and Jira status transitions. Phases (--phase plan|impl) enable Jira webhook automation - relay server receives webhooks and spawns headless Claude sessions. Review verdict gate with auto-fix loop (max 2 attempts) in ticket mode.',
+    details: { 'Default': 'plan -> execute -> commit -> review -> PR', 'Ticket mode': '+ jira fetch/post, worktree, status transitions', 'Legacy': '--skip plan,execute for commit -> review -> PR only', 'Webhook relay': 'jira-relay.js + Cloudflare Tunnel', 'Plan template': 'Diagnosis, OpenSpec recommendation, Environment, Tasks, E2E Test Plan, Risks' }
   },
   doctor: {
     icon: '🩺', title: '/df:doctor', subtitle: 'Guardrails health check - 11 checks, zero LLM',
@@ -1284,11 +1284,11 @@ const CMD_DATA = {
     details: { 'Hooks': 'Verifies scripts exist at expected paths', 'Discovery': 'Dimensions, multi-repo, worktree, OpenSpec', 'gh CLI': 'Checks authentication status' }
   },
   jira: {
-    icon: '🎫', title: '/df:jira', subtitle: 'Fetch ticket for planning, post test cases + Playwright E2E proof',
-    flags: ['fetch <TICKET-ID>', 'post-test-cases <TICKET-ID> <change-id>', 'post-test-results <TICKET-ID> <spec-file>'],
-    flow: ['fetch: jira_get_issue -> structured ticket data -> /df:plan context', 'post-test-cases: spec.md scenarios -> Polish template -> add_comment', 'post-test-results: playwright --screenshot=on -> results table -> add_comment + add_attachment'],
-    description: 'Three operations: fetch loads ticket title, description, and acceptance criteria via Atlassian MCP for /df:plan. Post-test-cases extracts Scenario: entries from OpenSpec spec.md and posts them as a structured Jira comment. Post-test-results runs Playwright tests with screenshots always enabled, posts a results table (PASS/FAIL per scenario) and attaches screenshots as visual proof - product owners see how the UI looks without running tests locally.',
-    details: { 'Fetch MCP': 'mcp__atlassian__getJiraIssue', 'Comment MCP': 'mcp__atlassian__addCommentToJiraIssue', 'Attachments': 'curl Jira REST API - needs JIRA_URL + JIRA_EMAIL + JIRA_API_TOKEN in ~/.claude/settings.json env section', 'Templates': 'plugins/devflow/templates/jira/ (Bug, Story, Task, Epic, test-cases)', 'Override': '.claude/jira-templates/<Type>.md', 'Language': 'Polish (PL)', 'Screenshots': 'Always on - visual proof of UI state' }
+    icon: '🎫', title: '/df:jira', subtitle: 'Jira integration: fetch, post plans/results, transition statuses',
+    flags: ['fetch <TICKET-ID>', 'post-plan <TICKET-ID>', 'post-result <TICKET-ID>', 'post-test-cases <TICKET-ID> <change-id>', 'post-test-results <TICKET-ID> <spec-file>'],
+    flow: ['fetch: REST API -> structured ticket data -> /df:plan context', 'post-plan: plan -> Jira comment (template) -> transition to "Plan do akceptacji"', 'post-result: PR link + summary -> Jira comment -> transition to "PR gotowy"', 'post-test-cases: spec.md scenarios -> Jira comment', 'post-test-results: Playwright -> results table + screenshots -> Jira'],
+    description: 'Five operations for full Jira lifecycle. In headless mode (webhook pipeline), uses Jira REST API via curl (JIRA_URL, JIRA_EMAIL, JIRA_API_TOKEN env vars). In interactive mode, uses Atlassian MCP. Post-plan uses structured template: Diagnosis, OpenSpec recommendation, Environment (branch/worktree/repos), Tasks with groups, E2E Test Plan, Risks.',
+    details: { 'Headless': 'curl Jira REST API (env vars)', 'Interactive': 'Atlassian MCP (OAuth)', 'Plan template': 'plugins/devflow/templates/jira/plan-comment.md', 'Webhook relay': 'jira-relay.js maps status transitions to claude -p phases', 'Statuses': 'Backlog -> Do realizacji -> Plan do akceptacji -> Zaakceptowany -> PR gotowy -> Gotowy + Wymaga uwagi' }
   },
   'cs-harvest': {
     icon: '🌾', title: '/cs:harvest', subtitle: 'Promote accumulated learnings into permanent project artifacts',
