@@ -133,21 +133,14 @@ Do transition: curl -s -X POST -H "Content-Type: application/json" -H "Authoriza
   const prompt = phase === 'plan'
     ? `Fetch Jira ticket ${issueKey}, analyze the codebase, generate an implementation plan.
 
-Use this exact template for the plan (find it at plugins/devflow/templates/jira/plan-comment.md or use this structure):
+IMPORTANT: Write the plan in Polish with proper Polish characters (ą, ę, ś, ć, ź, ż, ł, ó, ń).
+
+Use this exact template structure:
 
 # Plan implementacji | ${issueKey}
 
 ## Diagnoza
-<co jest nie tak / co trzeba zrobic>
-
-## OpenSpec
-Rekomendacja: TAK / NIE
-Powod: <nowa capability / behavioral change = TAK, bugfix / config = NIE>
-
-## Environment
-- Branch: ${ticketLower}-<short-description> (z staging)
-- Repos: fotigo / api-fotigo / oba
-- Worktree: <repo>/.worktrees/${ticketLower}-<short-description>
+<co jest nie tak / co trzeba zrobić - techniczny opis z plikami i liniami>
 
 ## Taski
 ### Group 1: <nazwa> [sonnet]
@@ -157,11 +150,24 @@ Depends on: none
 - [ ] 1.3 Verify: <komenda>
 
 ## E2E Test Plan
-- [ ] <scenariusz 1 - happy path>
-- [ ] <scenariusz 2 - edge case>
+Write scenarios from USER perspective, behavioral language, no technical terms:
+- [ ] <co użytkownik robi i co widzi - happy path>
+- [ ] <co użytkownik robi i co widzi - edge case>
+
+Example good: "Fotograf otwiera sesję prywatną z 5 wybranymi zdjęciami, zakładka 'Zdjęcia do przekazania' pokazuje liczbę 3 (bo 2 są wykluczone)"
+Example bad: "deliverable_photos_count zwraca 3 z API response"
 
 ## Ryzyka
-<niskie/srednie/wysokie - dlaczego>
+<niskie/średnie/wysokie - dlaczego>
+
+## OpenSpec
+Rekomendacja: TAK / NIE
+Powód: <dlaczego - nowa funkcjonalność / zmiana zachowania = TAK, bugfix / config = NIE>
+
+## Environment
+- Branch: ${ticketLower}-<short-description> (z staging)
+- Repos: fotigo / api-fotigo / oba
+- Worktree: <repo>/.worktrees/${ticketLower}-<short-description>
 
 This is a multi-repo project: api-fotigo (PHP backend) + fotigo (React frontend). Always branch from staging.
 
