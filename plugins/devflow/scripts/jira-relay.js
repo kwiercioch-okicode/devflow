@@ -351,9 +351,12 @@ ${jiraInstructions}`;
     postJiraComment(issueKey, startText);
   }
 
+  const maxTurns = phase === 'plan' ? ['--max-turns', '30'] : ['--max-turns', '80'];
+
   const child = spawn(CLAUDE_BIN, [
     '-p', prompt,
     ...modelArgs,
+    ...maxTurns,
     '--output-format', 'json',
     '--allowedTools', 'Read,Write,Edit,Glob,Grep,Bash,Agent,Skill,LSP',
   ], {
