@@ -214,28 +214,27 @@ Save the plan to .devflow/plan-${ticketLower}.md, post it as a Jira comment on $
 ${jiraInstructions}`
     : `Implement the plan for Jira ticket ${issueKey}. Read the plan from .devflow/plan-${ticketLower}.md.
 
-Steps in order:
-1. Create worktree(s) from staging branch as specified in the plan Environment section
+Steps in STRICT order:
+1. Check if worktree already exists (it may from a previous run). If yes, use it. If not, create from staging.
 2. Write failing tests first (test-first approach)
 3. Implement the fixes/features as specified in the plan
 4. Run tests and verify they pass
-5. Commit changes with conventional commit message
-6. Create PR via gh CLI
-7. LAST STEP: Post the PR link to Jira and transition ticket status
+5. Commit changes with conventional commit message (in the worktree, not main repo)
+6. Push the branch to origin
+7. Run code review (use the df:review skill or review the code yourself)
+8. Create PR via gh CLI (gh pr create --base staging)
+9. LAST STEP: Post the PR link to Jira and transition ticket status
+
+CRITICAL: Step 7 (review) MUST happen before step 8 (PR). The review-gate hook will block PR creation without a review verdict in .devflow/review-verdict.json.
 
 This is a multi-repo project: api-fotigo (PHP backend) + fotigo (React frontend). Work autonomously.
-
-IMPORTANT for Jira calls: If curl is blocked by a hook, use node/python to make HTTP requests instead:
-node -e "const https=require('https'); const options={hostname:'${process.env.JIRA_URL?.replace('https://','')??''}',path:'/rest/api/3/issue/${issueKey}/comment',method:'POST',headers:{'Content-Type':'application/json','Authorization':'Basic '+Buffer.from(process.env.JIRA_EMAIL+':'+process.env.JIRA_API_TOKEN).toString('base64')}}; const req=https.request(options,res=>{let d='';res.on('data',c=>d+=c);res.on('end',()=>console.log(res.statusCode,d))}); req.write(JSON.stringify({body:{type:'doc',version:1,content:[{type:'paragraph',content:[{type:'text',text:'...'}]}]}})); req.end()"
-
-For transitions, first GET available transitions, then POST the matching one.
-Transition to "PR gotowy" on success, or "Wymaga uwagi" on failure.`;
+${jiraInstructions}`;
   log('INFO', `Spawning claude`, { issueKey, phase, prompt: prompt.slice(0, 80) + '...', cwd: PROJECT_CWD });
 
   // Post start comment to Jira
   if (process.env.JIRA_URL && process.env.JIRA_EMAIL && process.env.JIRA_API_TOKEN) {
-    const phaseLabel = phase === 'plan' ? 'planowanie' : 'implementację';
-    const startText = `Claude rozpoczął ${phaseLabel}...`;
+    const phaseLabel = phase === 'plan' ? 'planowanie' : 'implementacj\u0119';
+    const startText = `Claude rozpocz\u0105\u0142 ${phaseLabel}...`;
     postJiraComment(issueKey, startText);
   }
 
@@ -298,7 +297,7 @@ Transition to "PR gotowy" on success, or "Wymaga uwagi" on failure.`;
     // Post end comment to Jira
     {
       const phaseLabel = phase === 'plan' ? 'Planowanie' : 'Implementacja';
-      const status = code === 0 ? 'zakonczone' : 'BLAD';
+      const status = code === 0 ? 'zako\u0144czone' : 'B\u0141\u0104D';
       const resumePart = sessionId ? ` | claude --resume ${sessionId}` : '';
       postJiraComment(issueKey, `${phaseLabel} ${status}${resumePart}`);
     }
