@@ -408,18 +408,43 @@ ${jiraInstructions}`;
       stderr: stderr.slice(-500),
     });
 
-    // Post end comment to Jira
+    // Validate outcome and post end comment to Jira
     {
       const phaseLabel = phase === 'plan' ? 'Planowanie' : 'Implementacja';
-      const status = code === 0 ? 'zako\u0144czone' : 'B\u0141\u0104D';
-      const resumePart = sessionId ? ` | claude --resume ${sessionId}` : '';
-      postJiraComment(issueKey, `${phaseLabel} ${status}${resumePart}`);
+      const resumeCmd = sessionId ? `claude --resume ${sessionId}` : '';
+      let outcome;
+
+      if (code !== 0) {
+        outcome = 'B\u0141\u0104D';
+      } else if (phase === 'plan') {
+        // Check if plan file was created
+        const planPath = join(PROJECT_CWD, '.devflow', `plan-${issueKey.toLowerCase()}.md`);
+        outcome = require('node:fs').existsSync(planPath) ? 'zako\u0144czone' : 'NIEPE\u0141NE (brak planu)';
+      } else if (phase === 'impl') {
+        // Check if PR was created by looking for gh pr in stdout or checking git
+        const prCreated = stdout.includes('pull/') || stdout.includes('pr create');
+        const hasCommit = exec(`git -C "${PROJECT_CWD}" log --oneline -1 2>/dev/null`) !== null;
+        if (prCreated) {
+          outcome = 'zako\u0144czone';
+        } else if (hasCommit) {
+          outcome = 'NIEPE\u0141NE (commit jest, brak PR)';
+        } else {
+          outcome = 'NIEPE\u0141NE (brak commitu i PR)';
+        }
+      } else {
+        outcome = code === 0 ? 'zako\u0144czone' : 'B\u0141\u0104D';
+      }
+
+      const comment = `${phaseLabel}: ${outcome}${resumeCmd ? ` | ${resumeCmd}` : ''}`;
+      postJiraComment(issueKey, comment);
+      log('INFO', `Outcome`, { issueKey, phase, outcome });
     }
 
     // macOS notification
     if (process.platform === 'darwin') {
-      const title = code === 0 ? `${issueKey}: ${phase} done` : `${issueKey}: ${phase} failed`;
-      const msg = sessionId ? `claude --resume ${sessionId}` : 'Check Jira for details';
+      const phaseLabel = phase === 'plan' ? 'Planowanie' : 'Implementacja';
+      const title = code === 0 ? `${issueKey}: ${phaseLabel}` : `${issueKey}: B\u0141\u0104D`;
+      const msg = sessionId ? `claude --resume ${sessionId}` : 'Sprawd\u017A Jir\u0119';
       exec(`osascript -e 'display notification "${msg}" with title "${title}"'`, { cwd: PROJECT_CWD });
     }
   });
