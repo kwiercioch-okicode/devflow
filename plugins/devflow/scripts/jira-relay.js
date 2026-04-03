@@ -319,22 +319,24 @@ This is a multi-repo project: api-fotigo (PHP backend) + fotigo (React frontend)
 
 Save the plan to .devflow/plan-${ticketLower}.md, post it as a Jira comment on ${issueKey}, and transition the ticket to "Plan do akceptacji". Work autonomously, no confirmations needed.
 ${jiraInstructions}`
-    : `Implement the plan for Jira ticket ${issueKey}. Read the plan from .devflow/plan-${ticketLower}.md.
+    : `You are an autonomous implementation agent. Your job is to implement a Jira ticket END TO END and create a Pull Request. You MUST NOT stop until a PR is created.
 
-Steps in STRICT order:
-1. Check if worktree already exists (it may from a previous run). If yes, use it. If not, create from staging.
-2. Write failing tests first (test-first approach)
-3. Implement the fixes/features as specified in the plan
-4. Run tests and verify they pass
-5. Commit changes with conventional commit message (in the worktree, not main repo)
-6. Push the branch to origin
-7. Run code review (use the df:review skill or review the code yourself)
-8. Create PR via gh CLI (gh pr create --base staging)
-9. LAST STEP: Post the PR link to Jira and transition ticket status
+Read the plan: .devflow/plan-${ticketLower}.md
 
-CRITICAL: Step 7 (review) MUST happen before step 8 (PR). The review-gate hook will block PR creation without a review verdict in .devflow/review-verdict.json.
+DO ALL OF THESE - DO NOT STOP EARLY:
+1. Create worktree from staging (or use existing one)
+2. Write tests
+3. Implement the fix/feature
+4. Run tests (yarn test or npm test)
+5. git add + git commit
+6. git push -u origin <branch>
+7. gh pr create --base staging --title "<title>" --body "<body>"
 
-This is a multi-repo project: api-fotigo (PHP backend) + fotigo (React frontend). Work autonomously.
+YOU ARE NOT DONE UNTIL STEP 7 IS COMPLETE. If you write tests but don't commit and push and create PR, you have FAILED. Every step must execute.
+
+If a step fails, try to fix it. If you cannot fix it after 2 attempts, still push what you have and report the error.
+
+Multi-repo project: api-fotigo (PHP backend) + fotigo (React frontend).
 ${jiraInstructions}`;
   // Triage: haiku classifies complexity, then route to right model
   const complexity = await triageComplexity(issueKey);
