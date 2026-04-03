@@ -227,8 +227,12 @@ Transition to "PR gotowy" on success, or "Wymaga uwagi" on failure.`;
     postJiraComment(issueKey, startText);
   }
 
+  // Plan: opus (better analysis). Impl: sonnet (cheaper, subagents do heavy lifting).
+  const modelArgs = phase === 'impl' ? ['--model', 'sonnet'] : [];
+
   const child = spawn(CLAUDE_BIN, [
     '-p', prompt,
+    ...modelArgs,
     '--output-format', 'json',
     '--allowedTools', 'Read,Write,Edit,Glob,Grep,Bash,Agent,Skill,LSP',
   ], {
