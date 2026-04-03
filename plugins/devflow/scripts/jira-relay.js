@@ -52,6 +52,18 @@ const PROJECT_CWD = cwdIdx !== -1 ? args[cwdIdx + 1] : process.cwd();
 const CLAUDE_BIN = process.env.CLAUDE_BIN || 'claude';
 const WEBHOOK_SECRET = process.env.JIRA_WEBHOOK_SECRET || null;
 
+// Load Jira env vars from ~/.claude/settings.json if not in environment
+if (!process.env.JIRA_URL || !process.env.JIRA_EMAIL || !process.env.JIRA_API_TOKEN) {
+  try {
+    const settingsPath = join(require('node:os').homedir(), '.claude', 'settings.json');
+    const settings = JSON.parse(require('node:fs').readFileSync(settingsPath, 'utf8'));
+    const env = settings.env || {};
+    if (!process.env.JIRA_URL && env.JIRA_URL) process.env.JIRA_URL = env.JIRA_URL;
+    if (!process.env.JIRA_EMAIL && env.JIRA_EMAIL) process.env.JIRA_EMAIL = env.JIRA_EMAIL;
+    if (!process.env.JIRA_API_TOKEN && env.JIRA_API_TOKEN) process.env.JIRA_API_TOKEN = env.JIRA_API_TOKEN;
+  } catch { /* settings not found or invalid */ }
+}
+
 // Status name (lowercase) → phase
 const STATUS_PHASE_MAP = {
   'do realizacji': 'plan',
