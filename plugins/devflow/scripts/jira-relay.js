@@ -110,7 +110,7 @@ function parsePayload(body) {
 
 // --- Claude spawning ---
 
-const activeJobs = new Map(); // issueKey → child process
+const activeJobs = new Map(); // issueKey → job info
 
 function spawnClaude(issueKey, phase) {
   // Prevent duplicate runs for same ticket
@@ -185,13 +185,31 @@ ${jiraInstructions}`;
     env: { ...process.env },
   });
 
-  activeJobs.set(issueKey, { phase, pid: child.pid, startedAt: new Date().toISOString() });
+  const job = {
+    phase,
+    pid: child.pid,
+    startedAt: new Date().toISOString(),
+    lastActivity: '',
+    stdoutLines: 0,
+    stderrSize: 0,
+  };
+  activeJobs.set(issueKey, job);
 
   let stdout = '';
   let stderr = '';
 
-  child.stdout.on('data', (chunk) => { stdout += chunk; });
-  child.stderr.on('data', (chunk) => { stderr += chunk; });
+  child.stdout.on('data', (chunk) => {
+    stdout += chunk;
+    const lines = chunk.toString().split('\n').filter(Boolean);
+    if (lines.length > 0) {
+      job.lastActivity = lines[lines.length - 1].slice(0, 200);
+      job.stdoutLines += lines.length;
+    }
+  });
+  child.stderr.on('data', (chunk) => {
+    stderr += chunk;
+    job.stderrSize += chunk.length;
+  });
 
   child.on('close', (code) => {
     activeJobs.delete(issueKey);
@@ -271,11 +289,22 @@ const server = http.createServer((req, res) => {
 
   // Status
   if (req.method === 'GET' && req.url === '/status') {
+    const now = Date.now();
+    const active = {};
+    for (const [key, job] of activeJobs) {
+      const durationSec = Math.round((now - new Date(job.startedAt).getTime()) / 1000);
+      const mins = Math.floor(durationSec / 60);
+      const secs = durationSec % 60;
+      active[key] = {
+        phase: job.phase,
+        pid: job.pid,
+        duration: `${mins}m${secs}s`,
+        lastActivity: job.lastActivity,
+        outputLines: job.stdoutLines,
+      };
+    }
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      active: Object.fromEntries(activeJobs),
-      config: { port: PORT, cwd: PROJECT_CWD, claudeBin: CLAUDE_BIN },
-    }));
+    res.end(JSON.stringify({ active, totalActive: activeJobs.size }));
     return;
   }
 
