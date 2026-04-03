@@ -378,6 +378,7 @@ ${jiraInstructions}`;
     ...maxTurns,
     '--output-format', 'json',
     '--allowedTools', 'Read,Write,Edit,Glob,Grep,Bash,Agent,Skill,LSP',
+    '--allow-dangerously-skip-permissions',
     '--dangerously-skip-permissions',
   ], {
     cwd: PROJECT_CWD,
