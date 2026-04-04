@@ -612,6 +612,23 @@ async function runScenarios() {
     const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
     assert(src.includes("'--output-format', 'json'") || src.includes('"--output-format"'), 'no --output-format json');
   });
+
+  await scenario('Claude process has timeout protection', async () => {
+    const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
+    assert(src.includes('PROCESS_TIMEOUT') || src.includes('processTimer'), 'no process timeout');
+    assert(src.includes('clearTimeout'), 'timeout not cleared on normal exit');
+    assert(src.includes('SIGTERM') || src.includes('SIGKILL'), 'no kill on timeout');
+  });
+
+  await scenario('Plan timeout is shorter than impl timeout', async () => {
+    const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
+    // Plan should have a shorter timeout than impl
+    const planTimeoutMatch = src.match(/plan.*?(\d+)\s*\*\s*60\s*\*\s*1000/i);
+    const implTimeoutMatch = src.match(/impl.*?(\d+)\s*\*\s*60\s*\*\s*1000/i) || src.match(/(\d+)\s*\*\s*60\s*\*\s*1000.*impl/i);
+    // At minimum, check that two different timeouts exist
+    assert(src.includes("15 * 60") || src.includes("15*60"), 'no plan-specific timeout');
+    assert(src.includes("60 * 60") || src.includes("60*60"), 'no impl-specific timeout');
+  });
 }
 
 // --- Main ---

@@ -470,6 +470,14 @@ ${PROJECT_CONFIG.repos ? `Project repos: ${PROJECT_CONFIG.repos}` : ''}`;
   job.pid = child.pid;
   job.lastActivity = 'running...';
 
+  // Process timeout: kill Claude if it runs too long
+  const PROCESS_TIMEOUT = phase === 'plan' ? 15 * 60 * 1000 : 60 * 60 * 1000; // 15min plan, 60min impl
+  const processTimer = setTimeout(() => {
+    log('WARN', `Claude process timeout for ${issueKey}`, { phase, timeout: PROCESS_TIMEOUT });
+    child.kill('SIGTERM');
+    setTimeout(() => child.kill('SIGKILL'), 5000); // Force kill after 5s
+  }, PROCESS_TIMEOUT);
+
   let stdout = '';
   let stderr = '';
 
@@ -487,6 +495,7 @@ ${PROJECT_CONFIG.repos ? `Project repos: ${PROJECT_CONFIG.repos}` : ''}`;
   });
 
   child.on('close', (code) => {
+    clearTimeout(processTimer);
     activeJobs.delete(issueKey);
 
     // Extract session ID from JSON output
