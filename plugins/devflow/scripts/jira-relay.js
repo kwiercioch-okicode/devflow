@@ -491,11 +491,11 @@ ${PROJECT_CONFIG.repos ? `Project repos: ${PROJECT_CONFIG.repos}` : ''}`;
         const prCheck = exec(`gh pr list --head "${issueKey.toLowerCase()}" --json url --jq ".[0].url" 2>/dev/null`, { cwd: PROJECT_CWD });
         // Also try broader search
         const prCheck2 = !prCheck ? exec(`gh pr list --state open --json url,headRefName --jq '.[] | select(.headRefName | contains("${issueKey.toLowerCase().replace('-','-')}")) | .url' 2>/dev/null`, { cwd: PROJECT_CWD }) : null;
-        const prUrl = prCheck || prCheck2;
+        const prUrl = (prCheck || prCheck2 || '').toString().trim();
 
         if (prUrl) {
           outcome = 'zako\u0144czone';
-          job.prUrl = prUrl.trim();
+          job.prUrl = prUrl;
         } else {
           // Check if at least committed
           const hasNewCommit = exec(`git -C "${PROJECT_CWD}" branch -r --contains HEAD 2>/dev/null`);
