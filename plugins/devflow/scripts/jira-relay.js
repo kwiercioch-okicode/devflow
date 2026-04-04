@@ -442,6 +442,8 @@ ${PROJECT_CONFIG.repos ? `Project repos: ${PROJECT_CONFIG.repos}` : ''}`;
   const model = phase === 'plan' ? models.plan : models.impl;
   const modelArgs = ['--model', model];
 
+  job.complexity = complexity;
+  job.model = model;
   log('INFO', `Spawning claude`, { issueKey, phase, complexity, model, cwd: PROJECT_CWD });
 
   // Post start comment to Jira
@@ -622,6 +624,8 @@ const server = http.createServer((req, res) => {
       const secs = durationSec % 60;
       active[key] = {
         phase: job.phase,
+        complexity: job.complexity || 'unknown',
+        model: job.model || 'unknown',
         pid: job.pid,
         duration: `${mins}m${secs}s`,
         lastActivity: job.lastActivity,

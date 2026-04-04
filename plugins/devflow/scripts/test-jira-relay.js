@@ -620,6 +620,13 @@ async function runScenarios() {
     assert(src.includes('SIGTERM') || src.includes('SIGKILL'), 'no kill on timeout');
   });
 
+  await scenario('Status endpoint includes complexity and model per job', async () => {
+    const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
+    // Status response should include complexity and model
+    assert(src.includes("job.complexity") || src.includes("complexity:"), 'no complexity in status');
+    assert(src.includes("job.model") || src.includes("model:"), 'no model in status');
+  });
+
   await scenario('Plan timeout is shorter than impl timeout', async () => {
     const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
     // Plan should have a shorter timeout than impl
