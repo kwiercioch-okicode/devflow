@@ -496,8 +496,9 @@ ${PROJECT_CONFIG.repos ? `Project repos: ${PROJECT_CONFIG.repos}` : ''}`;
   const model = phase === 'plan' ? models.plan : models.impl;
   const modelArgs = ['--model', model];
 
-  // Quality gate: reject tickets with insufficient information (quality 1-2)
-  if (quality <= 2) {
+  // Quality gate: reject tickets with insufficient information (quality 1-2), plan phase only
+  // In impl phase, ticket already passed plan + human approval, so quality is irrelevant
+  if (phase === 'plan' && quality <= 2) {
     log('WARN', `Ticket ${issueKey} quality too low`, { quality });
     postJiraComment(issueKey, `Ticket wymaga wi\u0119cej informacji (quality: ${quality}/5). Dodaj opis, kryteria akceptacji lub kroki reprodukcji.`);
     transitionJiraTicket(issueKey, 'Wymaga uwagi');
