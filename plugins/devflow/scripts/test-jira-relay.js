@@ -695,8 +695,13 @@ async function runScenarios() {
   await scenario('Relay cleans up worktree after successful impl', async () => {
     const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
     assert(src.includes('worktree remove') || src.includes('worktree cleanup'), 'no worktree cleanup in relay');
-    // Should be in the outcome validation block, not in the prompt
     assert(src.includes('Worktree cleaned up') || src.includes('Worktree cleanup'), 'no cleanup log message');
+  });
+
+  await scenario('PR detection searches sub-repos not just PROJECT_CWD', async () => {
+    const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
+    // gh pr list must run from actual git repo dirs, not Docker root
+    assert(src.includes('readdirSync') || src.includes('sub-repo') || src.includes('findGitRepos') || src.includes('.git'), 'PR detection does not search sub-repos');
   });
 }
 

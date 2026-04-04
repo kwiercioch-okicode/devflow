@@ -455,15 +455,28 @@ Do NOT try to call Jira API yourself (curl is blocked by hooks). Just create the
 If a step fails, try to fix it (max 2 attempts). If still failing, push what you have.
 
 ${PROJECT_CONFIG.repos ? `Project repos: ${PROJECT_CONFIG.repos}` : ''}`;
-  // Duplicate detection: check if PR or worktree already exists for this ticket
+  // Duplicate detection: check if PR already exists for this ticket in any sub-repo
   const ticketId = issueKey.toLowerCase();
   let existingPr = '';
+  const { readdirSync: readdir, existsSync: exists } = require('node:fs');
+  const dupCheckDirs = [];
+  if (exists(join(PROJECT_CWD, '.git'))) dupCheckDirs.push(PROJECT_CWD);
   try {
-    const allPrs = exec(`gh pr list --state open --json url,headRefName 2>/dev/null`, { cwd: PROJECT_CWD }).toString().trim();
-    const prs = JSON.parse(allPrs || '[]');
-    const duplicate = prs.find(pr => pr.headRefName.toLowerCase().includes(ticketId));
-    if (duplicate) existingPr = duplicate.url;
-  } catch { /* gh not available */ }
+    for (const e of readdir(PROJECT_CWD, { withFileTypes: true })) {
+      if (e.isDirectory() && exists(join(PROJECT_CWD, e.name, '.git'))) {
+        dupCheckDirs.push(join(PROJECT_CWD, e.name));
+      }
+    }
+  } catch { /* readdir failed */ }
+  for (const dir of dupCheckDirs) {
+    if (existingPr) break;
+    try {
+      const allPrs = exec(`gh pr list --state open --json url,headRefName 2>/dev/null`, { cwd: dir }).toString().trim();
+      const prs = JSON.parse(allPrs || '[]');
+      const duplicate = prs.find(pr => pr.headRefName.toLowerCase().includes(ticketId));
+      if (duplicate) existingPr = duplicate.url;
+    } catch { /* gh not available */ }
+  }
 
   if (existingPr) {
     log('INFO', `Duplicate PR found for ${issueKey}`, { pr: existingPr });
@@ -573,37 +586,62 @@ ${PROJECT_CONFIG.repos ? `Project repos: ${PROJECT_CONFIG.repos}` : ''}`;
         const planPath = join(PROJECT_CWD, '.devflow', `plan-${issueKey.toLowerCase()}.md`);
         outcome = require('node:fs').existsSync(planPath) ? 'zako\u0144czone' : 'NIEPE\u0141NE (brak planu)';
       } else if (phase === 'impl') {
-        // Find PR by searching all open PRs containing the ticket ID in branch name
+        // Find PR by searching sub-repos (PROJECT_CWD may be Docker root, not a git repo)
         const ticketId = issueKey.toLowerCase();
         let prUrl = '';
-        try {
-          const allPrs = exec(`gh pr list --state open --json url,headRefName 2>/dev/null`, { cwd: PROJECT_CWD }).toString().trim();
-          const prs = JSON.parse(allPrs || '[]');
-          const match = prs.find(pr => pr.headRefName.toLowerCase().includes(ticketId));
-          if (match) prUrl = match.url;
-        } catch { /* gh not available or parse error */ }
 
-        // Also check worktrees for branch name and search by that
-        if (!prUrl) {
-          try {
-            const worktrees = exec(`git -C "${PROJECT_CWD}" worktree list --porcelain 2>/dev/null`).toString();
-            const branchMatch = worktrees.match(/branch refs\/heads\/([^\n]*${ticketId.replace('-', '.')}[^\n]*)/i);
-            if (branchMatch) {
-              const branch = branchMatch[1];
-              const branchPr = exec(`gh pr list --head "${branch}" --json url --jq ".[0].url" 2>/dev/null`, { cwd: PROJECT_CWD }).toString().trim();
-              if (branchPr) prUrl = branchPr;
+        // Discover git repos: PROJECT_CWD itself + immediate subdirectories with .git
+        const { readdirSync, existsSync } = require('node:fs');
+        const gitRepoDirs = [];
+        if (existsSync(join(PROJECT_CWD, '.git'))) {
+          gitRepoDirs.push(PROJECT_CWD);
+        }
+        try {
+          for (const entry of readdirSync(PROJECT_CWD, { withFileTypes: true })) {
+            if (entry.isDirectory() && existsSync(join(PROJECT_CWD, entry.name, '.git'))) {
+              gitRepoDirs.push(join(PROJECT_CWD, entry.name));
             }
-          } catch { /* git/gh not available */ }
+          }
+        } catch { /* readdir failed */ }
+
+        // Search each git repo for PR matching ticket ID
+        for (const repoDir of gitRepoDirs) {
+          if (prUrl) break;
+          try {
+            const allPrs = exec(`gh pr list --state open --json url,headRefName 2>/dev/null`, { cwd: repoDir }).toString().trim();
+            const prs = JSON.parse(allPrs || '[]');
+            const match = prs.find(pr => pr.headRefName.toLowerCase().includes(ticketId));
+            if (match) prUrl = match.url;
+          } catch { /* gh not available */ }
+
+          // Also check worktrees for branch name
+          if (!prUrl) {
+            try {
+              const worktrees = exec(`git -C "${repoDir}" worktree list --porcelain 2>/dev/null`).toString();
+              const branchMatch = worktrees.match(/branch refs\/heads\/([^\n]*${ticketId.replace('-', '.')}[^\n]*)/i);
+              if (branchMatch) {
+                const branch = branchMatch[1];
+                const branchPr = exec(`gh pr list --head "${branch}" --json url --jq ".[0].url" 2>/dev/null`, { cwd: repoDir }).toString().trim();
+                if (branchPr) prUrl = branchPr;
+              }
+            } catch { /* git/gh not available */ }
+          }
         }
 
         if (prUrl) {
           outcome = 'zako\u0144czone';
           job.prUrl = prUrl;
         } else {
+          // Check if worktree with ticket ID exists in any sub-repo
           let hasNewCommit = false;
-          try {
-            hasNewCommit = exec(`git -C "${PROJECT_CWD}" worktree list 2>/dev/null`).toString().includes(ticketId);
-          } catch { /* git not available */ }
+          for (const repoDir of gitRepoDirs) {
+            try {
+              if (exec(`git -C "${repoDir}" worktree list 2>/dev/null`).toString().includes(ticketId)) {
+                hasNewCommit = true;
+                break;
+              }
+            } catch { /* git not available */ }
+          }
           outcome = hasNewCommit ? 'NIEPE\u0141NE (commit jest, brak PR)' : 'NIEPE\u0141NE (brak commitu i PR)';
         }
       } else {
