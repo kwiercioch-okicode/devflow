@@ -511,6 +511,20 @@ async function runScenarios() {
     const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
     assert(src.includes('complexity') && src.includes('model'), 'start comment missing complexity/model');
   });
+
+  await scenario('Triage defaults to moderate on unknown complexity', async () => {
+    const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
+    // Multiple fallback points should default to moderate
+    const moderateCount = (src.match(/moderate/g) || []).length;
+    assert(moderateCount >= 3, `only ${moderateCount} moderate references, expected >=3 fallbacks`);
+  });
+
+  await scenario('osascript wrapped in try/catch', async () => {
+    const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
+    const osascriptIdx = src.indexOf('osascript');
+    const surrounding = src.slice(Math.max(0, osascriptIdx - 400), osascriptIdx + 100);
+    assert(surrounding.includes('try {') || surrounding.includes('try{'), 'osascript not in try/catch');
+  });
 }
 
 // --- Main ---

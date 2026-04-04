@@ -567,10 +567,12 @@ ${PROJECT_CONFIG.repos ? `Project repos: ${PROJECT_CONFIG.repos}` : ''}`;
 
     // macOS notification
     if (process.platform === 'darwin') {
-      const phaseLabel = phase === 'plan' ? 'Planowanie' : 'Implementacja';
-      const title = code === 0 ? `${issueKey}: ${phaseLabel}` : `${issueKey}: B\u0141\u0104D`;
-      const msg = sessionId ? `claude --resume ${sessionId}` : 'Sprawd\u017A Jir\u0119';
-      exec(`osascript -e 'display notification "${msg}" with title "${title}"'`, { cwd: PROJECT_CWD });
+      try {
+        const phaseLabel = phase === 'plan' ? 'Planowanie' : 'Implementacja';
+        const title = code === 0 ? `${issueKey}: ${phaseLabel}` : `${issueKey}: B\u0141\u0104D`;
+        const msg = sessionId ? `claude --resume ${sessionId}` : 'Sprawd\u017A Jir\u0119';
+        exec(`osascript -e 'display notification "${msg}" with title "${title}"'`, { cwd: PROJECT_CWD });
+      } catch { /* osascript not available */ }
     }
   });
 
