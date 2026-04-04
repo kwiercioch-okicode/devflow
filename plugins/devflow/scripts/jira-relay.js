@@ -448,8 +448,9 @@ DO ALL OF THESE IN ORDER - DO NOT STOP EARLY:
 8. git add + git commit (include review summary in commit body)
 9. git push -u origin <branch>
 10. gh pr create --base ${PROJECT_CONFIG.prBase} --title "<title>" --body "<body with review findings and fixes>"
+11. Worktree cleanup: cd to the parent repo, then run: git worktree remove <worktree-path> --force
 
-YOU ARE NOT DONE UNTIL STEP 10 IS COMPLETE. The relay will handle Jira updates after you finish.
+YOU ARE NOT DONE UNTIL STEP 11 IS COMPLETE. The relay will handle Jira updates after you finish.
 Do NOT try to call Jira API yourself (curl is blocked by hooks). Just create the PR.
 
 If a step fails, try to fix it (max 2 attempts). If still failing, push what you have.

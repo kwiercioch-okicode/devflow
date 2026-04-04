@@ -691,6 +691,11 @@ async function runScenarios() {
     const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
     assert(src.includes('scope') && src.includes('postJiraComment'), 'start comment missing scope');
   });
+
+  await scenario('Impl prompt includes worktree cleanup after PR', async () => {
+    const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
+    assert(src.includes('worktree remove') || src.includes('worktree cleanup'), 'impl prompt missing worktree cleanup step');
+  });
 }
 
 // --- Main ---
