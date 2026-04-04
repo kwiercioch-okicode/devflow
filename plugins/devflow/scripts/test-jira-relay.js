@@ -773,6 +773,11 @@ async function runScenarios() {
     assert(src.includes('checkpoint') && src.includes('checkpoint.step'), 'relay does not read checkpoint.step');
   });
 
+  await scenario('Triage fetches comments not just description', async () => {
+    const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
+    assert(src.includes('comment') && src.includes('fields=summary,description,comment'), 'fetchTicketDescription does not include comments');
+  });
+
   await scenario('Plan prompt supports revision when plan already exists', async () => {
     const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
     // Plan prompt must detect existing plan file and treat as revision

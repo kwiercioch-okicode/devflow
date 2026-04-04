@@ -266,7 +266,7 @@ function fetchTicketDescription(issueKey) {
       return;
     }
     const auth = Buffer.from(`${process.env.JIRA_EMAIL}:${process.env.JIRA_API_TOKEN}`).toString('base64');
-    const url = new URL(`/rest/api/3/issue/${issueKey}?fields=summary,description`, process.env.JIRA_URL);
+    const url = new URL(`/rest/api/3/issue/${issueKey}?fields=summary,description,comment`, process.env.JIRA_URL);
     const mod = url.protocol === 'https:' ? require('node:https') : require('node:http');
     const req = mod.request(url, {
       headers: { 'Authorization': `Basic ${auth}`, 'Accept': 'application/json' },
@@ -280,7 +280,14 @@ function fetchTicketDescription(issueKey) {
           const desc = json.fields?.description?.content?.map(b =>
             b.content?.map(c => c.text || '').join('')
           ).join('\n') || '';
-          resolve(`${summary}\n${desc}`.slice(0, 500));
+          // Extract last 3 comments (most recent feedback)
+          const comments = (json.fields?.comment?.comments || [])
+            .slice(-3)
+            .map(c => c.body?.content?.map(b => b.content?.map(t => t.text || '').join('')).join('\n') || '')
+            .filter(Boolean)
+            .join('\n---\n');
+          const commentSection = comments ? `\nRecent comments:\n${comments}` : '';
+          resolve(`${summary}\n${desc}${commentSection}`.slice(0, 800));
         } catch { resolve(''); }
       });
     });
