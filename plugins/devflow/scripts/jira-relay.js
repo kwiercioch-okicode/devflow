@@ -196,6 +196,11 @@ function parsePayload(body) {
   const issueKey = data?.issue?.key;
   if (!issueKey) return { error: 'No issue key found' };
 
+  // Validate issue key format to prevent injection (Jira keys are always PROJECT-123)
+  if (!/^[A-Z][A-Z0-9]+-\d+$/.test(issueKey)) {
+    return { error: `Invalid issue key format: ${issueKey.slice(0, 20)}` };
+  }
+
   // Try Jira Automation format first
   let toStatus = data?.transition?.to_status;
 

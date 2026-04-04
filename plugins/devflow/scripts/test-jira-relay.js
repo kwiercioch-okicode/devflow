@@ -245,14 +245,14 @@ async function runScenarios() {
   await scenario('POST /webhook duplicate job returns already_running', async () => {
     // Spawn a job that takes a while
     const res1 = await httpRequest('POST', '/webhook', {
-      issue: { key: 'TEST-DUP' },
+      issue: { key: 'TEST-900' },
       transition: { to_status: 'Do realizacji' },
     });
     assert(res1.json?.status === 'spawned', `first not spawned: ${res1.body}`);
 
     // Immediately try same ticket
     const res2 = await httpRequest('POST', '/webhook', {
-      issue: { key: 'TEST-DUP' },
+      issue: { key: 'TEST-900' },
       transition: { to_status: 'Do realizacji' },
     });
     assert(res2.json?.status === 'already_running', `second not blocked: ${res2.body}`);
@@ -262,7 +262,7 @@ async function runScenarios() {
 
   await scenario('GET /status shows active job during execution', async () => {
     const res = await httpRequest('POST', '/webhook', {
-      issue: { key: 'TEST-STATUS' },
+      issue: { key: 'TEST-901' },
       transition: { to_status: 'Do realizacji' },
     });
     assert(res.json?.status === 'spawned', `not spawned: ${res.body}`);
@@ -345,7 +345,7 @@ async function runScenarios() {
 
   await scenario('POST /webhook with issue key but no status returns error', async () => {
     const res = await httpRequest('POST', '/webhook', {
-      issue: { key: 'TEST-NO-STATUS' },
+      issue: { key: 'TEST-902' },
     });
     // Should return 200 with ignored (has issue key but no valid status)
     assert(res.status === 200, `status ${res.status}`);
@@ -556,10 +556,26 @@ async function runScenarios() {
 
   await scenario('Issue key format is validated', async () => {
     const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
-    // Issue key from Jira is always [A-Z]+-[0-9]+ format
-    // Even if not validated, the key goes through JSON parse -> property access
-    // which prevents injection. Verify the safe extraction path exists.
     assert(src.includes('data?.issue?.key'), 'no safe issue key extraction');
+    // Should have regex validation for PROJECT-123 format
+    assert(src.includes('[A-Z]') && src.includes('\\d+'), 'no issue key format validation regex');
+  });
+
+  await scenario('Malicious issue key is rejected', async () => {
+    const res = await httpRequest('POST', '/webhook', {
+      issue: { key: '"; rm -rf /' },
+      transition: { to_status: 'Do realizacji' },
+    });
+    // Should be rejected (400) because key doesn't match [A-Z]+-\d+ format
+    assert(res.status === 400, `malicious key not rejected: ${res.status} ${res.body}`);
+  });
+
+  await scenario('Issue key with spaces is rejected', async () => {
+    const res = await httpRequest('POST', '/webhook', {
+      issue: { key: 'TEST 1' },
+      transition: { to_status: 'Do realizacji' },
+    });
+    assert(res.status === 400, `key with spaces not rejected: ${res.status}`);
   });
 }
 
