@@ -700,8 +700,43 @@ async function runScenarios() {
 
   await scenario('PR detection searches sub-repos not just PROJECT_CWD', async () => {
     const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
-    // gh pr list must run from actual git repo dirs, not Docker root
     assert(src.includes('readdirSync') || src.includes('sub-repo') || src.includes('findGitRepos') || src.includes('.git'), 'PR detection does not search sub-repos');
+  });
+
+  // --- Resilience: auto-resume, relay-side push/PR, checkpoints ---
+
+  await scenario('Relay auto-resumes on incomplete impl outcome', async () => {
+    const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
+    assert(src.includes('--resume') && src.includes('Auto-resum'), 'no auto-resume on incomplete');
+  });
+
+  await scenario('Auto-resume has max retry limit', async () => {
+    const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
+    assert(src.includes('MAX_RESUME_RETRIES'), 'no MAX_RESUME_RETRIES constant');
+    assert(src.includes('resumeCount'), 'no resumeCount tracking');
+  });
+
+  await scenario('Relay does push if branch exists but not on remote', async () => {
+    const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
+    assert(src.includes('Relay pushing branch'), 'no relay-side push fallback log');
+    assert(src.includes('ls-remote'), 'no remote branch check');
+  });
+
+  await scenario('Relay creates PR if branch pushed but no PR exists', async () => {
+    const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
+    assert(src.includes('relay-created PR') || src.includes('Relay created PR'), 'no relay-side PR creation');
+    assert(src.includes('PR (relay fallback)'), 'no relay fallback comment');
+  });
+
+  await scenario('Impl prompt writes checkpoint file after each major step', async () => {
+    const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
+    assert(src.includes('checkpoint-') && src.includes('.json'), 'no checkpoint file in prompt');
+    assert(src.includes('checkpoint step'), 'no checkpoint instructions per step');
+  });
+
+  await scenario('Relay reads checkpoint to determine resume step', async () => {
+    const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
+    assert(src.includes('checkpoint') && src.includes('checkpoint.step'), 'relay does not read checkpoint.step');
   });
 }
 

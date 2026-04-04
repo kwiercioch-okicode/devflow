@@ -423,36 +423,40 @@ ${PROJECT_CONFIG.repos ? `- Repos: ${PROJECT_CONFIG.repos}` : ''}
 
 Save the plan to .devflow/plan-${ticketLower}.md, post it as a Jira comment on ${issueKey}, and transition the ticket to "Plan do akceptacji". Work autonomously, no confirmations needed.
 ${jiraInstructions}`
-    : `You are an autonomous implementation agent. Your job is to implement a Jira ticket END TO END: code, PR, and Jira update. You MUST NOT stop until ALL steps are done.
+    : `You are an autonomous implementation agent. Your job is to implement a Jira ticket END TO END: code, commit, push, and PR. You MUST NOT stop until ALL steps are done.
 
 Read the plan: .devflow/plan-${ticketLower}.md
 
-IMPORTANT: If the worktree already has commits from a previous run, check if PR exists (gh pr list --head <branch>). If PR exists, you are done. If not, continue from where the previous run stopped.
+CHECKPOINT SYSTEM: After completing each step, write a checkpoint file:
+echo '{"step":N,"branch":"<branch-name>","status":"done"}' > .devflow/checkpoint-${ticketLower}.json
+(where N is the step number you just completed). This lets the relay know your progress.
+
+IMPORTANT: If a checkpoint file already exists, read it first and SKIP to the next incomplete step.
+If the worktree already has commits from a previous run, check if PR exists (gh pr list --head <branch>). If PR exists, you are done.
 
 DO ALL OF THESE IN ORDER - DO NOT STOP EARLY:
-1. Create worktree from ${PROJECT_CONFIG.baseBranch} (or use existing one)
-2. Write tests
-3. Implement the fix/feature
-4. Run tests (${PROJECT_CONFIG.testCommand})
+1. Create worktree from ${PROJECT_CONFIG.baseBranch} (or use existing one) -> checkpoint step 1
+2. Write tests -> checkpoint step 2
+3. Implement the fix/feature -> checkpoint step 3
+4. Run tests (${PROJECT_CONFIG.testCommand}) -> checkpoint step 4
 5. CODE REVIEW - review every changed file checking:
    - Security: SQL injection, XSS, secrets in code, input validation
    - Naming: clear, consistent, domain-appropriate names
    - Error handling: proper error boundaries, no swallowed errors
    - Test coverage: are edge cases covered? missing scenarios?
    - Correctness: does the code match the plan? any logic bugs?
-   Write findings as a list. Be critical - silence is not approval.
-6. FIX review findings - fix all issues found in step 5. Re-run tests after fixes.
-7. Write review verdict: save to .devflow/review-verdict.json:
-   {"verdict":"APPROVED|NEEDS_WORK","findings":["finding1","finding2"],"fixed":["fix1","fix2"]}
-   Verdict is APPROVED only if all findings were fixed. Include what you found AND what you fixed.
-8. git add + git commit (include review summary in commit body)
-9. git push -u origin <branch>
-10. gh pr create --base ${PROJECT_CONFIG.prBase} --title "<title>" --body "<body with review findings and fixes>"
+   Write findings as a list. Be critical. -> checkpoint step 5
+6. FIX review findings - fix all issues found in step 5. Re-run tests after fixes. -> checkpoint step 6
+7. Write review verdict to .devflow/review-verdict.json:
+   {"verdict":"APPROVED|NEEDS_WORK","findings":[...],"fixed":[...]} -> checkpoint step 7
+8. git add + git commit (include review summary in commit body) -> checkpoint step 8
+9. git push -u origin <branch> -> checkpoint step 9
+10. gh pr create --base ${PROJECT_CONFIG.prBase} --title "<title>" --body "<body with review findings and fixes>" -> checkpoint step 10
 
-YOU ARE NOT DONE UNTIL STEP 10 IS COMPLETE. The relay will handle Jira updates and worktree cleanup after you finish.
-Do NOT try to call Jira API yourself (curl is blocked by hooks). Just create the PR.
-
-If a step fails, try to fix it (max 2 attempts). If still failing, push what you have.
+YOU ARE NOT DONE UNTIL STEP 10 IS COMPLETE AND CHECKPOINT SHOWS STEP 10.
+The relay will handle Jira updates and worktree cleanup after you finish.
+Do NOT try to call Jira API yourself. Just create the PR.
+If a step fails, try to fix it (max 2 attempts). If still failing, push what you have and write checkpoint with current step.
 
 ${PROJECT_CONFIG.repos ? `Project repos: ${PROJECT_CONFIG.repos}` : ''}`;
   // Duplicate detection: check if PR already exists for this ticket in any sub-repo
@@ -674,9 +678,119 @@ ${PROJECT_CONFIG.repos ? `Project repos: ${PROJECT_CONFIG.repos}` : ''}`;
           log('WARN', `Worktree cleanup failed for ${issueKey}`, { error: err.message });
         }
       }
-      // If impl failed, transition to "Wymaga uwagi"
+      // If impl incomplete, try relay-side recovery before giving up
       if (phase === 'impl' && !outcome.startsWith('zako')) {
-        transitionJiraTicket(issueKey, 'Wymaga uwagi');
+        // Read checkpoint to understand progress
+        let checkpoint = null;
+        try {
+          const cpPath = join(PROJECT_CWD, '.devflow', `checkpoint-${issueKey.toLowerCase()}.json`);
+          checkpoint = JSON.parse(require('node:fs').readFileSync(cpPath, 'utf8'));
+          log('INFO', `Checkpoint for ${issueKey}`, checkpoint);
+        } catch { /* no checkpoint */ }
+
+        // Relay-side push fallback: if code is committed but not pushed
+        if (checkpoint && checkpoint.step >= 8 && checkpoint.branch) {
+          for (const repoDir of gitRepoDirs) {
+            try {
+              // Check if branch exists locally
+              const branches = exec(`git -C "${repoDir}" branch --list "${checkpoint.branch}" 2>/dev/null`).toString().trim();
+              if (branches) {
+                // Check if branch is on remote
+                const remote = exec(`git -C "${repoDir}" ls-remote --heads origin "${checkpoint.branch}" 2>/dev/null`).toString().trim();
+                if (!remote) {
+                  log('INFO', `Relay pushing branch ${checkpoint.branch} from ${repoDir}`);
+                  exec(`git -C "${repoDir}" push -u origin "${checkpoint.branch}" 2>/dev/null`);
+                  checkpoint.step = Math.max(checkpoint.step, 9);
+                }
+              }
+            } catch { /* push failed */ }
+          }
+        }
+
+        // Relay-side PR creation fallback: if pushed but no PR
+        if (checkpoint && checkpoint.step >= 9 && checkpoint.branch) {
+          let relayPrUrl = '';
+          for (const repoDir of gitRepoDirs) {
+            if (relayPrUrl) break;
+            try {
+              const existing = exec(`gh pr list --head "${checkpoint.branch}" --json url --jq ".[0].url" 2>/dev/null`, { cwd: repoDir }).toString().trim();
+              if (existing) {
+                relayPrUrl = existing;
+              } else {
+                const prOut = exec(`gh pr create --base "${PROJECT_CONFIG.prBase}" --title "fix(${issueKey}): relay-created PR" --body "Relay created this PR because Claude did not complete step 10." --head "${checkpoint.branch}" 2>/dev/null`, { cwd: repoDir }).toString().trim();
+                if (prOut) relayPrUrl = prOut;
+                log('INFO', `Relay created PR for ${issueKey}`, { pr: relayPrUrl });
+              }
+            } catch { /* pr create failed */ }
+          }
+
+          if (relayPrUrl) {
+            outcome = 'zako\u0144czone';
+            job.prUrl = relayPrUrl;
+            postJiraComment(issueKey, `PR (relay fallback): ${relayPrUrl}`);
+            transitionJiraTicket(issueKey, 'PR gotowy');
+            log('INFO', `Relay recovered ${issueKey} via PR fallback`);
+          }
+        }
+
+        // Auto-resume: if still incomplete and we have a session ID, retry
+        const MAX_RESUME_RETRIES = 2;
+        const resumeCount = job.resumeCount || 0;
+        if (!outcome.startsWith('zako') && sessionId && resumeCount < MAX_RESUME_RETRIES) {
+          log('INFO', `Auto-resuming ${issueKey} (attempt ${resumeCount + 1}/${MAX_RESUME_RETRIES})`, { sessionId, checkpoint });
+          const resumeStep = checkpoint ? checkpoint.step + 1 : 'unknown';
+          postJiraComment(issueKey, `Auto-resume ${resumeCount + 1}/${MAX_RESUME_RETRIES}: kontynuuj\u0119 od kroku ${resumeStep}`);
+
+          // Re-spawn with --resume instead of new prompt
+          const resumeChild = spawn(CLAUDE_BIN, [
+            '--resume', sessionId,
+            '-p', `You stopped early. Continue from step ${resumeStep}. Check .devflow/checkpoint-${issueKey.toLowerCase()}.json for progress. Complete ALL remaining steps up to step 10.`,
+            '--max-turns', '40',
+            '--output-format', 'json',
+            '--allow-dangerously-skip-permissions',
+            '--dangerously-skip-permissions',
+          ], {
+            cwd: PROJECT_CWD,
+            stdio: ['ignore', 'pipe', 'pipe'],
+            env: { ...process.env },
+          });
+
+          // Track resume in activeJobs
+          const resumeJob = { ...job, pid: resumeChild.pid, resumeCount: resumeCount + 1, lastActivity: 'auto-resume...' };
+          activeJobs.set(issueKey, resumeJob);
+
+          let resumeStdout = '';
+          resumeChild.stdout.on('data', (c) => { resumeStdout += c; });
+          resumeChild.on('close', () => {
+            // Re-run outcome validation after resume (recursive through same flow)
+            activeJobs.delete(issueKey);
+            log('INFO', `Resume completed for ${issueKey}`);
+            // Note: for simplicity, we don't recurse - just check PR one more time
+            let finalPrUrl = '';
+            for (const repoDir of gitRepoDirs) {
+              if (finalPrUrl) break;
+              try {
+                const allPrs = exec(`gh pr list --state open --json url,headRefName 2>/dev/null`, { cwd: repoDir }).toString().trim();
+                const prs = JSON.parse(allPrs || '[]');
+                const match = prs.find(pr => pr.headRefName.toLowerCase().includes(issueKey.toLowerCase()));
+                if (match) finalPrUrl = match.url;
+              } catch {}
+            }
+            if (finalPrUrl) {
+              postJiraComment(issueKey, `PR (po resume): ${finalPrUrl}`);
+              transitionJiraTicket(issueKey, 'PR gotowy');
+            } else {
+              postJiraComment(issueKey, `NIEPE\u0141NE po ${resumeCount + 1} resume. ${sessionId ? `claude --resume ${sessionId}` : ''}`);
+              transitionJiraTicket(issueKey, 'Wymaga uwagi');
+            }
+          });
+          return; // Don't transition yet - wait for resume
+        }
+
+        // Final: if still incomplete after all recovery, transition to Wymaga uwagi
+        if (!outcome.startsWith('zako')) {
+          transitionJiraTicket(issueKey, 'Wymaga uwagi');
+        }
       }
     }
 
