@@ -92,10 +92,30 @@ if (!process.env.JIRA_URL || !process.env.JIRA_EMAIL || !process.env.JIRA_API_TO
 }
 
 // Status name (lowercase) -> phase
-const STATUS_PHASE_MAP = {
-  'do realizacji': 'plan',
-  'zaakceptowany': 'impl',
+// Status prefix -> phase mapping. Matches any status starting with the prefix.
+// E.g. "01-Plan", "01-Custom Plan Name" both match prefix "01".
+const STATUS_PREFIX_MAP = {
+  '01': 'plan',
+  '03': 'impl',
 };
+
+// Status transition targets (used by relay for Jira transitions)
+const TRANSITION_TARGETS = {
+  planReview: '02-Plan Review',
+  prReady: '04-PR Ready',
+  blocked: '05-Blocked',
+  done: '06-Done',
+};
+
+function matchStatusPhase(status) {
+  const s = status.trim();
+  // Prefix match: "01-Plan" -> extract "01", look up in map
+  const prefixMatch = s.match(/^(\d{2})\b/);
+  if (prefixMatch) {
+    return STATUS_PREFIX_MAP[prefixMatch[1]] || null;
+  }
+  return null;
+}
 
 // --- Jira API helper ---
 
@@ -223,7 +243,8 @@ function parsePayload(body) {
 
   if (!toStatus) return { error: 'No status transition found', issueKey };
 
-  const phase = STATUS_PHASE_MAP[toStatus.toLowerCase()];
+  // Prefix-based matching: "01-Plan" -> prefix "01" -> phase "plan"
+  const phase = matchStatusPhase(toStatus);
   if (!phase) return { error: `Unknown status: ${toStatus}`, issueKey, toStatus };
 
   return { issueKey, toStatus, phase };
@@ -421,7 +442,7 @@ Powód: <dlaczego - nowa funkcjonalność / zmiana zachowania = TAK, bugfix / co
 - Worktree: <repo>/.worktrees/${ticketLower}-<short-description>
 ${PROJECT_CONFIG.repos ? `- Repos: ${PROJECT_CONFIG.repos}` : ''}
 
-Save the plan to .devflow/plan-${ticketLower}.md, post it as a Jira comment on ${issueKey}, and transition the ticket to "Plan do akceptacji". Work autonomously, no confirmations needed.
+Save the plan to .devflow/plan-${ticketLower}.md, post it as a Jira comment on ${issueKey}, and transition the ticket to "02-Plan Review". Work autonomously, no confirmations needed.
 ${jiraInstructions}`
     : `You are an autonomous implementation agent. Your job is to implement a Jira ticket END TO END: code, commit, push, and PR. You MUST NOT stop until ALL steps are done.
 
@@ -502,7 +523,7 @@ ${PROJECT_CONFIG.repos ? `Project repos: ${PROJECT_CONFIG.repos}` : ''}`;
       // Block: ticket has almost no information
       log('WARN', `Ticket ${issueKey} quality too low`, { quality });
       postJiraComment(issueKey, `Ticket wymaga opisu (quality: ${quality}/5). Dodaj co trzeba zrobi\u0107.`);
-      transitionJiraTicket(issueKey, 'Wymaga uwagi');
+      transitionJiraTicket(issueKey, TRANSITION_TARGETS.blocked);
       activeJobs.delete(issueKey);
       return false;
     }
@@ -696,7 +717,7 @@ ${PROJECT_CONFIG.repos ? `Project repos: ${PROJECT_CONFIG.repos}` : ''}`;
           postJiraComment(issueKey, `PR: ${job.prUrl}`);
         }
         // Transition to "PR gotowy"
-        transitionJiraTicket(issueKey, 'PR gotowy');
+        transitionJiraTicket(issueKey, TRANSITION_TARGETS.prReady);
 
         // Worktree cleanup: find and remove worktree for this ticket
         const ticketWt = issueKey.toLowerCase();
@@ -762,7 +783,7 @@ ${PROJECT_CONFIG.repos ? `Project repos: ${PROJECT_CONFIG.repos}` : ''}`;
             outcome = 'zako\u0144czone';
             job.prUrl = relayPrUrl;
             postJiraComment(issueKey, `PR (relay fallback): ${relayPrUrl}`);
-            transitionJiraTicket(issueKey, 'PR gotowy');
+            transitionJiraTicket(issueKey, TRANSITION_TARGETS.prReady);
             log('INFO', `Relay recovered ${issueKey} via PR fallback`);
           }
         }
@@ -812,10 +833,10 @@ ${PROJECT_CONFIG.repos ? `Project repos: ${PROJECT_CONFIG.repos}` : ''}`;
             }
             if (finalPrUrl) {
               postJiraComment(issueKey, `PR (po resume): ${finalPrUrl}`);
-              transitionJiraTicket(issueKey, 'PR gotowy');
+              transitionJiraTicket(issueKey, TRANSITION_TARGETS.prReady);
             } else {
               postJiraComment(issueKey, `NIEPE\u0141NE po ${resumeCount + 1} resume. ${sessionId ? `claude --resume ${sessionId}` : ''}`);
-              transitionJiraTicket(issueKey, 'Wymaga uwagi');
+              transitionJiraTicket(issueKey, TRANSITION_TARGETS.blocked);
             }
           });
           return; // Don't transition yet - wait for resume
@@ -823,7 +844,7 @@ ${PROJECT_CONFIG.repos ? `Project repos: ${PROJECT_CONFIG.repos}` : ''}`;
 
         // Final: if still incomplete after all recovery, transition to Wymaga uwagi
         if (!outcome.startsWith('zako')) {
-          transitionJiraTicket(issueKey, 'Wymaga uwagi');
+          transitionJiraTicket(issueKey, TRANSITION_TARGETS.blocked);
         }
       }
     }
@@ -979,9 +1000,9 @@ server.listen(PORT, () => {
   console.log(`  POST /webhook  - Jira webhook receiver`);
   console.log(`  GET  /health   - Health check`);
   console.log(`  GET  /status   - Active jobs`);
-  console.log(`\nStatus mapping:`);
-  for (const [status, phase] of Object.entries(STATUS_PHASE_MAP)) {
-    console.log(`  "${status}" → --phase ${phase}`);
+  console.log(`\nStatus mapping (prefix-based):`);
+  for (const [prefix, phase] of Object.entries(STATUS_PREFIX_MAP)) {
+    console.log(`  "${prefix}-*" -> --phase ${phase}`);
   }
   console.log(`\nWaiting for webhooks...\n`);
 });

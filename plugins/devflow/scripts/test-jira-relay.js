@@ -182,7 +182,7 @@ async function runScenarios() {
   await scenario('POST /webhook with valid plan status returns spawned', async () => {
     const res = await httpRequest('POST', '/webhook', {
       issue: { key: 'TEST-1' },
-      transition: { to_status: 'Do realizacji' },
+      transition: { to_status: '01-Plan' },
     });
     assert(res.status === 200, `status ${res.status}`);
     assert(res.json?.status === 'spawned', `not spawned: ${res.body}`);
@@ -194,7 +194,7 @@ async function runScenarios() {
   await scenario('POST /webhook with valid impl status returns spawned', async () => {
     const res = await httpRequest('POST', '/webhook', {
       issue: { key: 'TEST-2' },
-      transition: { to_status: 'Zaakceptowany' },
+      transition: { to_status: '03-Implement' },
     });
     assert(res.status === 200, `status ${res.status}`);
     assert(res.json?.status === 'spawned', `not spawned: ${res.body}`);
@@ -204,8 +204,8 @@ async function runScenarios() {
 
   await scenario('POST /webhook with Jira standard format (changelog)', async () => {
     const res = await httpRequest('POST', '/webhook', {
-      issue: { key: 'TEST-3', fields: { status: { name: 'Do realizacji' } } },
-      changelog: { items: [{ field: 'status', toString: 'Do realizacji' }] },
+      issue: { key: 'TEST-3', fields: { status: { name: '01-Plan' } } },
+      changelog: { items: [{ field: 'status', toString: '01-Plan' }] },
     });
     assert(res.status === 200, `status ${res.status}`);
     assert(res.json?.status === 'spawned', `not spawned: ${res.body}`);
@@ -215,7 +215,7 @@ async function runScenarios() {
 
   await scenario('POST /webhook with status from fields fallback', async () => {
     const res = await httpRequest('POST', '/webhook', {
-      issue: { key: 'TEST-4', fields: { status: { name: 'Zaakceptowany' } } },
+      issue: { key: 'TEST-4', fields: { status: { name: '03-Implement' } } },
     });
     assert(res.status === 200, `status ${res.status}`);
     assert(res.json?.status === 'spawned', `not spawned: ${res.body}`);
@@ -246,14 +246,14 @@ async function runScenarios() {
     // Spawn a job that takes a while
     const res1 = await httpRequest('POST', '/webhook', {
       issue: { key: 'TEST-900' },
-      transition: { to_status: 'Do realizacji' },
+      transition: { to_status: '01-Plan' },
     });
     assert(res1.json?.status === 'spawned', `first not spawned: ${res1.body}`);
 
     // Immediately try same ticket
     const res2 = await httpRequest('POST', '/webhook', {
       issue: { key: 'TEST-900' },
-      transition: { to_status: 'Do realizacji' },
+      transition: { to_status: '01-Plan' },
     });
     assert(res2.json?.status === 'already_running', `second not blocked: ${res2.body}`);
 
@@ -263,7 +263,7 @@ async function runScenarios() {
   await scenario('GET /status shows active job during execution', async () => {
     const res = await httpRequest('POST', '/webhook', {
       issue: { key: 'TEST-901' },
-      transition: { to_status: 'Do realizacji' },
+      transition: { to_status: '01-Plan' },
     });
     assert(res.json?.status === 'spawned', `not spawned: ${res.body}`);
 
@@ -299,10 +299,26 @@ async function runScenarios() {
     assert(src.includes('gh pr list'), 'no PR check in resume');
   });
 
-  await scenario('Status mapping covers all expected Jira statuses', async () => {
+  await scenario('Status mapping uses prefix-based matching', async () => {
     const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
-    assert(src.includes("'do realizacji'"), 'missing do realizacji mapping');
-    assert(src.includes("'zaakceptowany'"), 'missing zaakceptowany mapping');
+    assert(src.includes("'01'") || src.includes("startsWith"), 'missing prefix-based plan mapping');
+    assert(src.includes("'03'") || src.includes("startsWith"), 'missing prefix-based impl mapping');
+  });
+
+  await scenario('Prefix matching works with any suffix after prefix', async () => {
+    const res1 = await httpRequest('POST', '/webhook', {
+      issue: { key: 'TEST-801' },
+      transition: { to_status: '01-Custom Plan Name' },
+    });
+    assert(res1.json?.phase === 'plan', `prefix 01 not matched: ${res1.body}`);
+    await new Promise(r => setTimeout(r, 1000));
+
+    const res2 = await httpRequest('POST', '/webhook', {
+      issue: { key: 'TEST-802' },
+      transition: { to_status: '03-Custom Impl Name' },
+    });
+    assert(res2.json?.phase === 'impl', `prefix 03 not matched: ${res2.body}`);
+    await new Promise(r => setTimeout(r, 1000));
   });
 
   await scenario('Triage routes to correct models by complexity', async () => {
@@ -317,12 +333,12 @@ async function runScenarios() {
   await scenario('Outcome validation posts PR link on success', async () => {
     const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
     assert(src.includes('PR:') || src.includes('prUrl'), 'no PR link posting');
-    assert(src.includes("'PR gotowy'") || src.includes('PR gotowy'), 'no PR gotowy transition');
+    assert(src.includes("'04-PR Ready'") || src.includes('04-PR Ready') || src.includes("'PR gotowy'"), 'no PR Ready transition');
   });
 
-  await scenario('Failure outcome transitions to Wymaga uwagi', async () => {
+  await scenario('Failure outcome transitions to Blocked', async () => {
     const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
-    assert(src.includes('Wymaga uwagi'), 'no Wymaga uwagi transition');
+    assert(src.includes('05-Blocked') || src.includes('Wymaga uwagi'), 'no Blocked/Attention transition');
   });
 
   await scenario('Session ID extracted and posted in Jira comment', async () => {
@@ -358,7 +374,7 @@ async function runScenarios() {
     for (let i = 100; i < 105; i++) {
       promises.push(httpRequest('POST', '/webhook', {
         issue: { key: `TEST-${i}` },
-        transition: { to_status: 'Do realizacji' },
+        transition: { to_status: '01-Plan' },
       }));
     }
     const results = await Promise.all(promises);
@@ -415,9 +431,9 @@ async function runScenarios() {
   await scenario('Relay handles concurrent webhooks for different tickets', async () => {
     // Fire 3 webhooks for different tickets simultaneously
     const [r1, r2, r3] = await Promise.all([
-      httpRequest('POST', '/webhook', { issue: { key: 'CONC-1' }, transition: { to_status: 'Do realizacji' } }),
-      httpRequest('POST', '/webhook', { issue: { key: 'CONC-2' }, transition: { to_status: 'Do realizacji' } }),
-      httpRequest('POST', '/webhook', { issue: { key: 'CONC-3' }, transition: { to_status: 'Zaakceptowany' } }),
+      httpRequest('POST', '/webhook', { issue: { key: 'CONC-1' }, transition: { to_status: '01-Plan' } }),
+      httpRequest('POST', '/webhook', { issue: { key: 'CONC-2' }, transition: { to_status: '01-Plan' } }),
+      httpRequest('POST', '/webhook', { issue: { key: 'CONC-3' }, transition: { to_status: '03-Implement' } }),
     ]);
     assert(r1.json?.status === 'spawned', `CONC-1 not spawned: ${r1.body}`);
     assert(r2.json?.status === 'spawned', `CONC-2 not spawned: ${r2.body}`);
@@ -564,7 +580,7 @@ async function runScenarios() {
   await scenario('Malicious issue key is rejected', async () => {
     const res = await httpRequest('POST', '/webhook', {
       issue: { key: '"; rm -rf /' },
-      transition: { to_status: 'Do realizacji' },
+      transition: { to_status: '01-Plan' },
     });
     // Should be rejected (400) because key doesn't match [A-Z]+-\d+ format
     assert(res.status === 400, `malicious key not rejected: ${res.status} ${res.body}`);
@@ -573,7 +589,7 @@ async function runScenarios() {
   await scenario('Issue key with spaces is rejected', async () => {
     const res = await httpRequest('POST', '/webhook', {
       issue: { key: 'TEST 1' },
-      transition: { to_status: 'Do realizacji' },
+      transition: { to_status: '01-Plan' },
     });
     assert(res.status === 400, `key with spaces not rejected: ${res.status}`);
   });
@@ -597,9 +613,9 @@ async function runScenarios() {
     assert(src.includes('--base') || src.includes('prBase'), 'no --base in PR creation');
   });
 
-  await scenario('Plan prompt transition target is Plan do akceptacji', async () => {
+  await scenario('Plan prompt transition target is 02-Plan Review', async () => {
     const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
-    assert(src.includes('Plan do akceptacji'), 'wrong transition target in plan prompt');
+    assert(src.includes('02-Plan Review') || src.includes('Plan do akceptacji'), 'wrong transition target in plan prompt');
   });
 
   await scenario('Relay uses --dangerously-skip-permissions flag', async () => {
@@ -691,7 +707,7 @@ async function runScenarios() {
 
   await scenario('Low quality ticket is rejected with Jira comment', async () => {
     const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
-    assert(src.includes('quality') && (src.includes('Wymaga uwagi') || src.includes('wymaga')), 'no quality gate rejection');
+    assert(src.includes('quality') && (src.includes('05-Blocked') || src.includes('Wymaga uwagi')), 'no quality gate rejection');
   });
 
   await scenario('Duplicate detection checks existing PRs before spawn', async () => {
