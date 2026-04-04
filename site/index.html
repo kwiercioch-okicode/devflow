@@ -956,6 +956,81 @@ body::after {
   </div>
 </section>
 
+<!-- Jira SDLC Pipeline -->
+<section class="section">
+  <h2 class="section-title" style="color: var(--blue);">Jira SDLC Pipeline</h2>
+  <p class="section-subtitle">Ticket to PR - fully automated. Jira webhook triggers Claude, relay handles all Jira ops post-completion.</p>
+
+  <div class="pipeline" id="jira-pipeline">
+    <div class="pipeline-step" data-reveal style="border-color: #3b82f633;">
+      <div class="step-icon" style="border-color: var(--blue);">🔔</div>
+      <div class="step-label" style="color: var(--blue);">Webhook</div>
+      <div class="step-cmd" style="color: var(--blue);">POST /webhook</div>
+    </div>
+    <div class="step-arrow" data-reveal data-delay="100"></div>
+
+    <div class="pipeline-step" data-reveal data-delay="150" style="border-color: #a78bfa33;">
+      <div class="step-icon" style="border-color: var(--purple);">🧠</div>
+      <div class="step-label" style="color: var(--purple);">Triage</div>
+      <div class="step-cmd" style="color: var(--purple);">haiku</div>
+    </div>
+    <div class="step-arrow" data-reveal data-delay="250"></div>
+
+    <div class="pipeline-step" data-reveal data-delay="300">
+      <div class="step-icon">📋</div>
+      <div class="step-label">Plan</div>
+      <div class="step-cmd">sonnet / opus</div>
+    </div>
+    <div class="step-arrow" data-reveal data-delay="400"></div>
+
+    <div class="pipeline-step" data-reveal data-delay="450">
+      <div class="step-icon" style="border-color: var(--warn);">👤</div>
+      <div class="step-label" style="color: var(--warn);">Approve</div>
+      <div class="step-cmd" style="color: var(--warn);">human in Jira</div>
+    </div>
+    <div class="step-arrow" data-reveal data-delay="550"></div>
+
+    <div class="pipeline-step" data-reveal data-delay="600">
+      <div class="step-icon">⚡</div>
+      <div class="step-label">Implement</div>
+      <div class="step-cmd">sonnet (100 turns)</div>
+    </div>
+    <div class="step-arrow" data-reveal data-delay="700"></div>
+
+    <div class="pipeline-step" data-reveal data-delay="750">
+      <div class="step-icon">🔍</div>
+      <div class="step-label">Review</div>
+      <div class="step-cmd">5-dim code review</div>
+    </div>
+    <div class="step-arrow" data-reveal data-delay="850"></div>
+
+    <div class="pipeline-step" data-reveal data-delay="900">
+      <div class="step-icon">🚀</div>
+      <div class="step-label">PR</div>
+      <div class="step-cmd">gh pr create</div>
+    </div>
+    <div class="step-arrow" data-reveal data-delay="1000"></div>
+
+    <div class="pipeline-step" data-reveal data-delay="1050" style="border-color: #3b82f633;">
+      <div class="step-icon" style="border-color: var(--blue);">📡</div>
+      <div class="step-label" style="color: var(--blue);">Jira Update</div>
+      <div class="step-cmd" style="color: var(--blue);">relay posts + transitions</div>
+    </div>
+  </div>
+
+  <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; margin-top: 1rem; font-size: 0.65rem; color: var(--text-dim); letter-spacing: 0.05em;">
+    <span>15min plan timeout</span>
+    <span style="color: var(--border);">|</span>
+    <span>60min impl timeout</span>
+    <span style="color: var(--border);">|</span>
+    <span>68 E2E tests</span>
+    <span style="color: var(--border);">|</span>
+    <span>4 endpoints</span>
+    <span style="color: var(--border);">|</span>
+    <span>session resume via Jira comment</span>
+  </div>
+</section>
+
 <!-- Config Pipeline -->
 <section class="section">
   <h2 class="section-title" style="color: var(--purple);">Config Pipeline</h2>
