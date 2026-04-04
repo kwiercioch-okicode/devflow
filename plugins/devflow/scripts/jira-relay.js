@@ -119,13 +119,16 @@ function matchStatusPhase(status) {
 
 // --- Jira API helper ---
 
+const COMMENT_PREFIX = '\u{1F916} [Claude] ';
+
 function postJiraComment(issueKey, text) {
   if (!process.env.JIRA_URL || !process.env.JIRA_EMAIL || !process.env.JIRA_API_TOKEN) return;
 
+  const prefixedText = `${COMMENT_PREFIX}${text}`;
   const auth = Buffer.from(`${process.env.JIRA_EMAIL}:${process.env.JIRA_API_TOKEN}`).toString('base64');
   const body = JSON.stringify({
     body: { type: 'doc', version: 1, content: [
-      { type: 'paragraph', content: [{ type: 'text', text }] }
+      { type: 'paragraph', content: [{ type: 'text', text: prefixedText }] }
     ]}
   });
 
@@ -281,10 +284,10 @@ function fetchTicketDescription(issueKey) {
             b.content?.map(c => c.text || '').join('')
           ).join('\n') || '';
           // Extract last 3 human comments (filter out relay/bot comments)
-          const BOT_PREFIXES = ['Claude rozpocz', 'Planowanie:', 'Implementacja:', 'Ticket wymaga', 'PR:', 'Auto-resume', 'PR ju', 'Uwaga: ticket', 'Plan implementacji'];
+          // Filter out Claude/relay comments (all prefixed with COMMENT_PREFIX)
           const comments = (json.fields?.comment?.comments || [])
             .map(c => c.body?.content?.map(b => b.content?.map(t => t.text || '').join('')).join('\n') || '')
-            .filter(text => text && !BOT_PREFIXES.some(prefix => text.startsWith(prefix)))
+            .filter(text => text && !text.includes('[Claude]'))
             .slice(-3)
             .join('\n---\n');
           const commentSection = comments ? `\nRecent comments:\n${comments}` : '';
