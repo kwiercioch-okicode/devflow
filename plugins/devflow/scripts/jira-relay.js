@@ -448,9 +448,8 @@ DO ALL OF THESE IN ORDER - DO NOT STOP EARLY:
 8. git add + git commit (include review summary in commit body)
 9. git push -u origin <branch>
 10. gh pr create --base ${PROJECT_CONFIG.prBase} --title "<title>" --body "<body with review findings and fixes>"
-11. Worktree cleanup: cd to the parent repo, then run: git worktree remove <worktree-path> --force
 
-YOU ARE NOT DONE UNTIL STEP 11 IS COMPLETE. The relay will handle Jira updates after you finish.
+YOU ARE NOT DONE UNTIL STEP 10 IS COMPLETE. The relay will handle Jira updates and worktree cleanup after you finish.
 Do NOT try to call Jira API yourself (curl is blocked by hooks). Just create the PR.
 
 If a step fails, try to fix it (max 2 attempts). If still failing, push what you have.
@@ -615,13 +614,27 @@ ${PROJECT_CONFIG.repos ? `Project repos: ${PROJECT_CONFIG.repos}` : ''}`;
       postJiraComment(issueKey, comment);
       log('INFO', `Outcome`, { issueKey, phase, outcome });
 
-      // If impl succeeded with PR, post PR link and transition Jira
+      // If impl succeeded with PR, post PR link, transition Jira, cleanup worktree
       if (phase === 'impl' && outcome.startsWith('zako')) {
         if (job.prUrl) {
           postJiraComment(issueKey, `PR: ${job.prUrl}`);
         }
         // Transition to "PR gotowy"
         transitionJiraTicket(issueKey, 'PR gotowy');
+
+        // Worktree cleanup: find and remove worktree for this ticket
+        const ticketWt = issueKey.toLowerCase();
+        try {
+          const wtList = exec(`git -C "${PROJECT_CWD}" worktree list --porcelain 2>/dev/null`).toString();
+          const wtMatch = wtList.match(new RegExp(`worktree\\s+([^\\n]*${ticketWt.replace('-', '.')}[^\\n]*)`, 'i'));
+          if (wtMatch) {
+            const wtPath = wtMatch[1];
+            exec(`git -C "${PROJECT_CWD}" worktree remove "${wtPath}" --force 2>/dev/null`);
+            log('INFO', `Worktree cleaned up for ${issueKey}`, { path: wtPath });
+          }
+        } catch (err) {
+          log('WARN', `Worktree cleanup failed for ${issueKey}`, { error: err.message });
+        }
       }
       // If impl failed, transition to "Wymaga uwagi"
       if (phase === 'impl' && !outcome.startsWith('zako')) {

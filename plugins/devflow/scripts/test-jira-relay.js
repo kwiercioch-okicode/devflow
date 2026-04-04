@@ -692,9 +692,11 @@ async function runScenarios() {
     assert(src.includes('scope') && src.includes('postJiraComment'), 'start comment missing scope');
   });
 
-  await scenario('Impl prompt includes worktree cleanup after PR', async () => {
+  await scenario('Relay cleans up worktree after successful impl', async () => {
     const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
-    assert(src.includes('worktree remove') || src.includes('worktree cleanup'), 'impl prompt missing worktree cleanup step');
+    assert(src.includes('worktree remove') || src.includes('worktree cleanup'), 'no worktree cleanup in relay');
+    // Should be in the outcome validation block, not in the prompt
+    assert(src.includes('Worktree cleaned up') || src.includes('Worktree cleanup'), 'no cleanup log message');
   });
 }
 
