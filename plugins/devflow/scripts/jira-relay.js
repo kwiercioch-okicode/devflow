@@ -120,17 +120,26 @@ function matchStatusPhase(status) {
 // --- Jira API helper ---
 
 const COMMENT_PREFIX = '\u{1F916} [Claude] ';
+let markdownToAdf;
+try { markdownToAdf = require('marklassian').markdownToAdf; } catch { /* not installed */ }
 
 function postJiraComment(issueKey, text) {
   if (!process.env.JIRA_URL || !process.env.JIRA_EMAIL || !process.env.JIRA_API_TOKEN) return;
 
   const prefixedText = `${COMMENT_PREFIX}${text}`;
   const auth = Buffer.from(`${process.env.JIRA_EMAIL}:${process.env.JIRA_API_TOKEN}`).toString('base64');
-  const body = JSON.stringify({
-    body: { type: 'doc', version: 1, content: [
+
+  // Use ADF Markdown rendering for rich content (headings, lists, code)
+  const hasMarkdown = /^#{1,3}\s|^\- \[|^\*\*|```/m.test(text);
+  let adfBody;
+  if (hasMarkdown && markdownToAdf) {
+    adfBody = markdownToAdf(prefixedText);
+  } else {
+    adfBody = { type: 'doc', version: 1, content: [
       { type: 'paragraph', content: [{ type: 'text', text: prefixedText }] }
-    ]}
-  });
+    ]};
+  }
+  const body = JSON.stringify({ body: adfBody });
 
   const url = new URL(`/rest/api/3/issue/${issueKey}/comment`, process.env.JIRA_URL);
   const mod = url.protocol === 'https:' ? require('node:https') : require('node:http');

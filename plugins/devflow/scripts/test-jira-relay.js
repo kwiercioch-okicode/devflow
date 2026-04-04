@@ -778,6 +778,11 @@ async function runScenarios() {
     assert(src.includes('comment') && src.includes('fields=summary,description,comment'), 'fetchTicketDescription does not include comments');
   });
 
+  await scenario('Jira comments use ADF format for Markdown content', async () => {
+    const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
+    assert(src.includes('marklassian') || src.includes('markdownToAdf'), 'no Markdown-to-ADF conversion');
+  });
+
   await scenario('Plan prompt supports revision when plan already exists', async () => {
     const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
     // Plan prompt must detect existing plan file and treat as revision
