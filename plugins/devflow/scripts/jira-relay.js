@@ -496,14 +496,21 @@ ${PROJECT_CONFIG.repos ? `Project repos: ${PROJECT_CONFIG.repos}` : ''}`;
   const model = phase === 'plan' ? models.plan : models.impl;
   const modelArgs = ['--model', model];
 
-  // Quality gate: reject tickets with insufficient information (quality 1-2), plan phase only
-  // In impl phase, ticket already passed plan + human approval, so quality is irrelevant
-  if (phase === 'plan' && quality <= 2) {
-    log('WARN', `Ticket ${issueKey} quality too low`, { quality });
-    postJiraComment(issueKey, `Ticket wymaga wi\u0119cej informacji (quality: ${quality}/5). Dodaj opis, kryteria akceptacji lub kroki reprodukcji.`);
-    transitionJiraTicket(issueKey, 'Wymaga uwagi');
-    activeJobs.delete(issueKey);
-    return false;
+  // Quality gate (plan phase only - impl tickets already passed human approval)
+  if (phase === 'plan') {
+    if (quality <= 1) {
+      // Block: ticket has almost no information
+      log('WARN', `Ticket ${issueKey} quality too low`, { quality });
+      postJiraComment(issueKey, `Ticket wymaga opisu (quality: ${quality}/5). Dodaj co trzeba zrobi\u0107.`);
+      transitionJiraTicket(issueKey, 'Wymaga uwagi');
+      activeJobs.delete(issueKey);
+      return false;
+    }
+    if (quality <= 2) {
+      // Warning: proceed but note low quality in Jira
+      log('INFO', `Ticket ${issueKey} low quality, proceeding with warning`, { quality });
+      postJiraComment(issueKey, `Uwaga: ticket ma niewiele informacji (quality: ${quality}/5). Plan mo\u017Ce by\u0107 niedok\u0142adny.`);
+    }
   }
 
   job.complexity = complexity;
@@ -518,12 +525,29 @@ ${PROJECT_CONFIG.repos ? `Project repos: ${PROJECT_CONFIG.repos}` : ''}`;
     postJiraComment(issueKey, startText);
   }
 
-  const maxTurns = phase === 'plan' ? ['--max-turns', '30'] : ['--max-turns', '100'];
+  const maxBudget = phase === 'plan' ? ['--max-budget-usd', '3'] : ['--max-budget-usd', '10'];
+
+  // Stop hook for impl phase: prevents Claude from stopping before step 10
+  const stopHookScript = join(__dirname, 'stop-hook-check.sh');
+  const stopHookSettings = phase === 'impl' ? [
+    '--settings', JSON.stringify({
+      hooks: {
+        Stop: [{
+          hooks: [{
+            type: 'command',
+            command: `bash "${stopHookScript}"`,
+            timeout: 5000,
+          }],
+        }],
+      },
+    }),
+  ] : [];
 
   const child = spawn(CLAUDE_BIN, [
     '-p', prompt,
     ...modelArgs,
-    ...maxTurns,
+    ...maxBudget,
+    ...stopHookSettings,
     '--output-format', 'json',
     '--allowedTools', 'Read,Write,Edit,Glob,Grep,Bash,Agent,Skill,LSP',
     '--allow-dangerously-skip-permissions',
@@ -746,7 +770,7 @@ ${PROJECT_CONFIG.repos ? `Project repos: ${PROJECT_CONFIG.repos}` : ''}`;
           const resumeChild = spawn(CLAUDE_BIN, [
             '--resume', sessionId,
             '-p', `You stopped early. Continue from step ${resumeStep}. Check .devflow/checkpoint-${issueKey.toLowerCase()}.json for progress. Complete ALL remaining steps up to step 10.`,
-            '--max-turns', '40',
+            '--max-budget-usd', '5',
             '--output-format', 'json',
             '--allow-dangerously-skip-permissions',
             '--dangerously-skip-permissions',

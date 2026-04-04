@@ -647,6 +647,24 @@ async function runScenarios() {
     assert(src.includes("60 * 60") || src.includes("60*60"), 'no impl-specific timeout');
   });
 
+  await scenario('Uses --max-budget-usd instead of --max-turns', async () => {
+    const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
+    assert(src.includes('max-budget-usd'), 'no --max-budget-usd');
+    assert(!src.includes('max-turns'), '--max-turns should not be used (does not exist)');
+  });
+
+  await scenario('Stop hook configured for impl phase', async () => {
+    const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
+    assert(src.includes('Stop') && src.includes('stop-hook-check'), 'no Stop hook for impl');
+    assert(src.includes("phase === 'impl'") || src.includes('stopHookSettings'), 'Stop hook not conditional on impl');
+  });
+
+  await scenario('Quality gate blocks only quality 1 tickets', async () => {
+    const src = require('node:fs').readFileSync(RELAY_SCRIPT, 'utf8');
+    assert(src.includes('quality <= 1'), 'quality gate should block at 1, not 2');
+    assert(src.includes('quality <= 2') && src.includes('warning'), 'quality 2 should be warning not block');
+  });
+
   await scenario('Status endpoint includes uptime and config', async () => {
     const res = await httpRequest('GET', '/status');
     assert(typeof res.json?.uptime === 'number', `no uptime: ${res.body}`);
